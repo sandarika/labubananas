@@ -26,3 +26,11 @@ def create_feedback_for_post(post_id: int, feedback: schemas.FeedbackCreate, db:
 @router.get("/post/{post_id}", response_model=List[schemas.Feedback])
 def list_feedback_for_post(post_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return db.query(models.Feedback).filter(models.Feedback.post_id == post_id).offset(skip).limit(limit).all()
+
+
+@router.get("/{feedback_id}", response_model=schemas.Feedback)
+def get_feedback(feedback_id: int, db: Session = Depends(get_db)):
+    feedback = db.query(models.Feedback).filter(models.Feedback.id == feedback_id).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    return feedback
