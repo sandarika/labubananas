@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from .routes import api_router
 from .db import engine, Base
 
@@ -7,7 +8,16 @@ from . import models  # noqa: F401
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Bunch Up API")
+app = FastAPI(title="Bunch Up API", description="API backend for Bunch Up labor organization platform")
+
+# Basic CORS setup for local dev; adjust origins for production security.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace with explicit frontend domain(s) later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(api_router, prefix="/api")
 
 

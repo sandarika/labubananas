@@ -4,6 +4,7 @@ from typing import List
 
 from .. import models, schemas
 from ..db import get_db, engine
+from ..security import require_roles
 
 # Ensure tables exist when router is imported in simple setups
 models.Base.metadata.create_all(bind=engine)
@@ -11,7 +12,7 @@ models.Base.metadata.create_all(bind=engine)
 router = APIRouter()
 
 
-@router.post("/", response_model=schemas.Union)
+@router.post("/", response_model=schemas.Union, dependencies=[Depends(require_roles(["organizer", "admin"]))])
 def create_union(union: schemas.UnionCreate, db: Session = Depends(get_db)):
     existing = db.query(models.Union).filter(models.Union.name == union.name).first()
     if existing:

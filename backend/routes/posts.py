@@ -4,13 +4,14 @@ from typing import List
 
 from .. import models, schemas
 from ..db import get_db, engine
+from ..security import require_roles
 
 models.Base.metadata.create_all(bind=engine)
 
 router = APIRouter()
 
 
-@router.post("/union/{union_id}", response_model=schemas.Post)
+@router.post("/union/{union_id}", response_model=schemas.Post, dependencies=[Depends(require_roles(["organizer", "admin"]))])
 def create_post_for_union(union_id: int, post: schemas.PostCreate, db: Session = Depends(get_db)):
     u = db.query(models.Union).filter(models.Union.id == union_id).first()
     if not u:
