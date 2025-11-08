@@ -1,0 +1,98 @@
+form-a-bunch/
+│
+├── README.md                  # Project overview (the text above)
+├── LICENSE                    # Open-source license if applicable
+├── requirements.txt            # Python dependencies
+├── package.json                # Frontend dependencies
+├── .gitignore
+│
+├── backend/                   # Flask or FastAPI backend
+│   ├── main.py                 # Entry point for API
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── routes/
+│   │   │   ├── auth.py         # Authentication endpoints
+│   │   │   ├── chat.py         # Union/member communication
+│   │   │   ├── polls.py        # Polls and voting
+│   │   │   ├── events.py       # Meeting scheduling
+│   │   │   ├── feedback.py     # Anonymous feedback routes
+│   │   │   ├── ai_chatbot.py   # Legal chatbot endpoint
+│   │   ├── models/
+│   │   │   ├── user.py
+│   │   │   ├── union.py
+│   │   │   ├── message.py
+│   │   │   ├── poll.py
+│   │   │   ├── event.py
+│   │   ├── services/
+│   │   │   ├── auth_service.py
+│   │   │   ├── chatbot_service.py
+│   │   │   ├── db_service.py
+│   │   ├── utils/
+│   │   │   ├── security.py     # Encryption, JWT, anonymity helpers
+│   │   │   ├── validators.py
+│   │   ├── config.py
+│   ├── tests/
+│   │   ├── test_auth.py
+│   │   ├── test_chat.py
+│   │   ├── test_polls.py
+│   │   ├── test_events.py
+│   │   ├── test_feedback.py
+│   │   ├── test_ai_chatbot.py
+│
+├── frontend/                  # React app
+│   ├── public/
+│   │   ├── index.html
+│   │   ├── favicon.ico
+│   ├── src/
+│   │   ├── App.js
+│   │   ├── index.js
+│   │   ├── api/
+│   │   │   ├── apiClient.js     # Axios or fetch wrapper
+│   │   │   ├── endpoints.js
+│   │   ├── components/
+│   │   │   ├── ChatRoom.jsx
+│   │   │   ├── Polls.jsx
+│   │   │   ├── Events.jsx
+│   │   │   ├── FeedbackForm.jsx
+│   │   │   ├── ChatbotWidget.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── LoginForm.jsx
+│   │   │   ├── RegisterForm.jsx
+│   │   ├── pages/
+│   │   │   ├── HomePage.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── UnionPage.jsx
+│   │   │   ├── AdminPanel.jsx
+│   │   ├── hooks/
+│   │   │   ├── useAuth.js
+│   │   │   ├── useChat.js
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx
+│   │   │   ├── ThemeContext.jsx
+│   │   ├── styles/
+│   │   │   ├── main.css
+│   │   │   ├── components.css
+│   │   ├── utils/
+│   │   │   ├── formatDate.js
+│   │   │   ├── roles.js
+│
+├── database/
+│   ├── schema.sql              # If PostgreSQL
+│   ├── seed_data.sql
+│   ├── migrations/
+│       ├── 001_create_tables.sql
+│
+├── docs/
+│   ├── architecture-diagram.png
+│   ├── api_spec.md
+│   ├── ui_mockups/
+│   │   ├── login.png
+│   │   ├── chat_view.png
+│   │   ├── polls_view.png
+│
+├── scripts/
+│   ├── start_dev.sh
+│   ├── deploy.sh
+│   ├── setup_db.py
+│
+└── .env.example                # Environment variable template
