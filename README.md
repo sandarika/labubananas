@@ -22,6 +22,13 @@ During our research, we were particularly inspired by stories of **banana planta
 
 ---
 
+## 🧠 Inspiration
+
+Our idea was inspired by the struggles of **banana plantation workers** who lacked the means to collectively voice their concerns or organize due to poor communication channels.  
+Their resilience and need for unity motivated our team to create a tool that would make forming unions as effortless as forming friendships online.
+
+---
+
 ## 🚀 Solution
 
 **Form a Bunch** provides an intuitive, all-in-one communication hub for unions and employees.  
@@ -61,16 +68,12 @@ By scaling responsibly, Form a Bunch has the potential to become a **cornerstone
 
 ---
 
-## 🧠 Inspiration
-
-Our idea was inspired by the struggles of **banana plantation workers** who lacked the means to collectively voice their concerns or organize due to poor communication channels.  
-Their resilience and need for unity motivated our team to create a tool that would make forming unions as effortless as forming friendships online.
-
----
-
 ## 🧑‍💻 Team Labubananas
 
-- Mason Miller, Ananya Bindu Mirle, Rithvika Thunuguntla, Sandarika Warjri 
+- Mason Miller
+- Ananya Bindu Mirle 
+- Rithvika Thunuguntla
+- Sandarika Warjri 
 
 CornHacks 2025 Submission  
 “Forming Unions. Forming Change.”
