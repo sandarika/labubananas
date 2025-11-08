@@ -6,3 +6,9 @@ passlib[bcrypt]
 python-jose[cryptography]
 pydantic
 google-genai
+
+# SQLAlchemy (for relational models) and migration/DB drivers
+SQLAlchemy>=1.4
+alembic
+psycopg2-binary
+sqlalchemy-utils
