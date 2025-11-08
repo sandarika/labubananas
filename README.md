@@ -25,7 +25,7 @@ During our research, we were particularly inspired by stories of **banana planta
 ## 🚀 Solution
 
 **Form a Bunch** provides an intuitive, all-in-one communication hub for unions and employees.  
-Think of it as a **"LinkedIn for labor unions"**—a safe digital space for workers to organize, communicate, and advocate for better working conditions.
+Think of it as a **"Reddit for labor unions"**—a safe digital space for workers to organize, communicate, and advocate for better working conditions.
 
 ### Core Features
 - 🗨️ **Union & Member Communication** – Secure channels for workers and unions to chat, share updates, and post announcements.  
@@ -41,9 +41,7 @@ Think of it as a **"LinkedIn for labor unions"**—a safe digital space for work
 
 - **Frontend:** React  
 - **Backend:** Python (Flask/FastAPI)  
-- **Database:** TBD (e.g., PostgreSQL, Firebase, or MongoDB)  
-- **AI Integration:** Chatbot API for legal information and natural language responses  
-- **Hosting:** (Optional – add deployment platform if used)
+- **AI Integration:** Chatbot API for legal information and natural language responses using Google Gemini
 
 ---
 
