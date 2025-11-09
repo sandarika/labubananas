@@ -114,6 +114,13 @@ export default function ForumPage() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState("")
 
+  // Create poll dialog state
+  const [showCreatePoll, setShowCreatePoll] = useState(false)
+  const [newPollQuestion, setNewPollQuestion] = useState("")
+  const [newPollOptions, setNewPollOptions] = useState(["", ""])
+  const [creatingPoll, setCreatingPoll] = useState(false)
+  const [createPollError, setCreatePollError] = useState("")
+
   // Fetch posts and polls from API
   const fetchData = async () => {
     try {
@@ -174,6 +181,69 @@ export default function ForumPage() {
     } finally {
       setCreating(false)
     }
+  }
+
+  const handleCreatePoll = async () => {
+    // Validate inputs
+    const validOptions = newPollOptions.filter(opt => opt.trim().length > 0)
+    
+    if (!newPollQuestion.trim()) {
+      setCreatePollError("Please enter a poll question")
+      return
+    }
+
+    if (validOptions.length < 2) {
+      setCreatePollError("Please provide at least 2 options")
+      return
+    }
+
+    if (!isSignedIn) {
+      setCreatePollError("You must be signed in to create a poll")
+      return
+    }
+
+    setCreatingPoll(true)
+    setCreatePollError("")
+
+    try {
+      await pollsApi.createPoll({
+        question: newPollQuestion,
+        union_id: 1,
+        options: validOptions.map(text => ({ text })),
+      })
+      
+      // Refresh polls
+      await fetchData()
+      
+      // Reset form
+      setNewPollQuestion("")
+      setNewPollOptions(["", ""])
+      setShowCreatePoll(false)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create poll"
+      console.error("Error creating poll:", err)
+      setCreatePollError(errorMessage)
+    } finally {
+      setCreatingPoll(false)
+    }
+  }
+
+  const addPollOption = () => {
+    if (newPollOptions.length < 6) {
+      setNewPollOptions([...newPollOptions, ""])
+    }
+  }
+
+  const removePollOption = (index: number) => {
+    if (newPollOptions.length > 2) {
+      setNewPollOptions(newPollOptions.filter((_, i) => i !== index))
+    }
+  }
+
+  const updatePollOption = (index: number, value: string) => {
+    const updated = [...newPollOptions]
+    updated[index] = value
+    setNewPollOptions(updated)
   }
 
   // Toggle category filter
@@ -298,7 +368,10 @@ export default function ForumPage() {
         <div className="max-w-[1600px] mx-auto flex gap-6 px-4 py-6">
           {/* Left Sidebar - Hidden on mobile */}
           <div className="hidden lg:block">
-            <ForumLeftSidebar />
+            <ForumLeftSidebar 
+              onCreatePost={() => setShowCreatePost(true)}
+              onCreatePoll={() => setShowCreatePoll(true)}
+            />
           </div>
 
           {/* Main Feed */}
@@ -615,6 +688,91 @@ export default function ForumPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Create Poll Dialog */}
+      <Dialog open={showCreatePoll} onOpenChange={setShowCreatePoll}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Poll</DialogTitle>
+            <DialogDescription>
+              Ask the community for their opinion
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {createPollError && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                {createPollError}
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="poll-question">Question</Label>
+              <Input
+                id="poll-question"
+                placeholder="What do you want to ask?"
+                value={newPollQuestion}
+                onChange={(e) => setNewPollQuestion(e.target.value)}
+                disabled={creatingPoll}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Options</Label>
+              {newPollOptions.map((option, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    placeholder={`Option ${index + 1}`}
+                    value={option}
+                    onChange={(e) => updatePollOption(index, e.target.value)}
+                    disabled={creatingPoll}
+                  />
+                  {newPollOptions.length > 2 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removePollOption(index)}
+                      disabled={creatingPoll}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {newPollOptions.length < 6 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addPollOption}
+                  disabled={creatingPoll}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Option
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowCreatePoll(false)}
+                disabled={creatingPoll}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreatePoll}
+                disabled={creatingPoll || !newPollQuestion.trim() || newPollOptions.filter(o => o.trim()).length < 2}
+                className="bg-banana-DEFAULT text-foreground hover:bg-banana-dark"
+              >
+                {creatingPoll ? "Creating..." : "Create Poll"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Union Assistant Widget - shows on all screen sizes */}
       <UnionAssistantWidget />

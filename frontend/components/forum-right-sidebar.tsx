@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Bot, Send, Plus, BarChart3, AlertCircle, Sparkles } from "lucide-react"
+import { Bot, Send } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 type Message = {
@@ -68,39 +68,6 @@ export function ForumRightSidebar() {
 
   return (
     <aside className="w-80 space-y-4 sticky top-20">
-      <Card className="border-border shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-banana-DEFAULT" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Button
-            className="w-full justify-start gap-3 bg-banana-DEFAULT text-foreground hover:bg-banana-dark transition-all banana-bounce shadow-sm"
-            aria-label="Create new post"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="font-medium">New Post</span>
-          </Button>
-          <Button
-            className="w-full justify-start gap-3 bg-banana-light text-foreground hover:bg-banana-DEFAULT transition-all banana-bounce"
-            aria-label="Create poll"
-          >
-            <BarChart3 className="h-4 w-4" />
-            <span className="font-medium">Create Poll</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-3 border-border hover:bg-banana-light/50 transition-all banana-bounce bg-transparent"
-            aria-label="Submit anonymous feedback"
-          >
-            <AlertCircle className="h-4 w-4" />
-            <span className="font-medium">Anonymous Feedback</span>
-          </Button>
-        </CardContent>
-      </Card>
-
       <Card className="border-border shadow-sm">
         <CardHeader className="pb-3 border-b bg-gradient-to-r from-banana-light/30 to-transparent">
           <div className="flex items-center justify-between">

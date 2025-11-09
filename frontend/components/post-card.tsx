@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChevronUp, ChevronDown, MessageCircle, Share2, Bookmark, MoreHorizontal, ArrowRight } from "lucide-react"
+import { ChevronUp, ChevronDown, MessageCircle, MoreHorizontal, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CommentSection } from "@/components/comment-section"
 
@@ -176,24 +176,6 @@ export function PostCard({
               >
                 <MessageCircle className="h-4 w-4" />
                 <span className="text-xs font-medium">{commentCount}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground hover:bg-banana-light/50 gap-2 transition-all"
-                aria-label="Share post"
-              >
-                <Share2 className="h-4 w-4" />
-                <span className="text-xs font-medium">Share</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground hover:bg-banana-light/50 gap-2 transition-all"
-                aria-label="Save post"
-              >
-                <Bookmark className="h-4 w-4" />
-                <span className="text-xs font-medium">Save</span>
               </Button>
             </div>
           </div>
