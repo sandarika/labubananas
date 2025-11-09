@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from .. import models, schemas
 from ..db import get_db, engine
-from ..security import require_roles, get_current_user
+from ..security import require_roles, get_current_user, get_current_user_optional
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -29,6 +29,7 @@ def create_post_for_union(union_id: int, post: schemas.PostCreate, db: Session =
 
 @router.get("/union/{union_id}", response_model=List[schemas.Post])
 def list_posts_for_union(union_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """List posts in a union - no authentication required for viewing"""
     posts = db.query(models.Post).filter(models.Post.union_id == union_id).offset(skip).limit(limit).all()
     
     # Add vote counts to each post
@@ -49,6 +50,7 @@ def list_posts_for_union(union_id: int, skip: int = 0, limit: int = 100, db: Ses
 
 @router.get("/{post_id}", response_model=schemas.Post)
 def get_post(post_id: int, db: Session = Depends(get_db)):
+    """Get a single post - no authentication required for viewing"""
     p = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -99,7 +101,7 @@ def get_comments(
     limit: int = 100,
     db: Session = Depends(get_db)
 ):
-    """Get all comments for a post."""
+    """Get all comments for a post - no authentication required for viewing"""
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")

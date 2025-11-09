@@ -178,6 +178,8 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
     ...(options.headers as Record<string, string>),
   };
 
+  // Only add authorization header if token exists
+  // This allows anonymous access to public endpoints
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }

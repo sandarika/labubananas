@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from .. import models, schemas
 from ..db import get_db, engine
-from ..security import require_roles, get_current_user
+from ..security import require_roles, get_current_user, get_current_user_optional
 
 # Ensure tables exist when router is imported in simple setups
 models.Base.metadata.create_all(bind=engine)
@@ -37,7 +37,7 @@ def list_unions(
     industry: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Optional[models.User] = Depends(get_current_user_optional)
 ):
     query = db.query(models.Union)
     
@@ -63,10 +63,13 @@ def list_unions(
             models.UnionMember.union_id == union.id
         ).scalar()
         
-        is_member = db.query(models.UnionMember).filter(
-            models.UnionMember.union_id == union.id,
-            models.UnionMember.user_id == current_user.id
-        ).first() is not None
+        # Only check membership if user is authenticated
+        is_member = False
+        if current_user:
+            is_member = db.query(models.UnionMember).filter(
+                models.UnionMember.union_id == union.id,
+                models.UnionMember.user_id == current_user.id
+            ).first() is not None
         
         union_dict = {
             "id": union.id,
@@ -86,7 +89,7 @@ def list_unions(
 
 @router.get("/industries")
 def list_industries(db: Session = Depends(get_db)):
-    """Get all unique industries"""
+    """Get all unique industries - no authentication required"""
     industries = db.query(models.Union.industry).distinct().filter(
         models.Union.industry.isnot(None)
     ).all()
@@ -97,7 +100,7 @@ def list_industries(db: Session = Depends(get_db)):
 def get_union(
     union_id: int, 
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Optional[models.User] = Depends(get_current_user_optional)
 ):
     u = db.query(models.Union).filter(models.Union.id == union_id).first()
     if not u:
@@ -108,10 +111,13 @@ def get_union(
         models.UnionMember.union_id == union_id
     ).scalar()
     
-    is_member = db.query(models.UnionMember).filter(
-        models.UnionMember.union_id == union_id,
-        models.UnionMember.user_id == current_user.id
-    ).first() is not None
+    # Only check membership if user is authenticated
+    is_member = False
+    if current_user:
+        is_member = db.query(models.UnionMember).filter(
+            models.UnionMember.union_id == union_id,
+            models.UnionMember.user_id == current_user.id
+        ).first() is not None
     
     union_dict = {
         "id": u.id,

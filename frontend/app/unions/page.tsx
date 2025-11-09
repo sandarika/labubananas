@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Search, Building2, Tag, CheckCircle2, PlusCircle } from "lucide-react";
+import { Users, Search, Building2, Tag, CheckCircle2, PlusCircle, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useUser } from "@/lib/user-context";
+import Link from "next/link";
 
 export default function UnionsPage() {
   const [unions, setUnions] = useState<Union[]>([]);
@@ -19,6 +21,7 @@ export default function UnionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndustry, setSelectedIndustry] = useState<string>("all");
   const { toast } = useToast();
+  const { isSignedIn } = useUser();
 
   useEffect(() => {
     loadData();
@@ -73,6 +76,16 @@ export default function UnionsPage() {
   };
 
   const handleJoinLeave = async (unionId: number, isMember: boolean) => {
+    // Check if user is signed in
+    if (!isSignedIn) {
+      toast({
+        title: "Sign in required",
+        description: "You must be signed in to join a union.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       if (isMember) {
         await unionsApi.leaveUnion(unionId);
@@ -243,20 +256,33 @@ export default function UnionsPage() {
                 </CardContent>
 
                 <CardFooter>
-                  <Button
-                    className="w-full"
-                    variant={union.is_member ? "outline" : "default"}
-                    onClick={() => handleJoinLeave(union.id, union.is_member)}
-                  >
-                    {union.is_member ? (
-                      <>Leave Union</>
-                    ) : (
-                      <>
-                        <PlusCircle className="h-4 w-4 mr-2" />
-                        Join Union
-                      </>
-                    )}
-                  </Button>
+                  {isSignedIn ? (
+                    <Button
+                      className="w-full"
+                      variant={union.is_member ? "outline" : "default"}
+                      onClick={() => handleJoinLeave(union.id, union.is_member)}
+                    >
+                      {union.is_member ? (
+                        <>Leave Union</>
+                      ) : (
+                        <>
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Join Union
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full"
+                      variant="default"
+                      asChild
+                    >
+                      <Link href="/sign-in">
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Sign in to Join
+                      </Link>
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))}
