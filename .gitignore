@@ -1,0 +1,11 @@
+.env
+.env.local
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# Database
+backend/test.db

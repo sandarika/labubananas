@@ -1,4 +1,10 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
+import os
+
+# Load environment variables from .env (if present) so backend reads config from
+# the repository root during development.
+load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import api_router
 from .db import engine, Base
