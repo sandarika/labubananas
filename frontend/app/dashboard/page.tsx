@@ -18,6 +18,7 @@ const roleInfo = {
     icon: Shield,
     description: "Full control over union operations",
     permissions: [
+      { name: "Post and interact in forum", granted: true },
       { name: "Create and manage events", granted: true },
       { name: "Manage polls and voting", granted: true },
       { name: "Manage users and roles", granted: true },
@@ -31,6 +32,7 @@ const roleInfo = {
     icon: Megaphone,
     description: "Lead discussions and coordinate activities",
     permissions: [
+      { name: "Post and interact in forum", granted: true },
       { name: "Create and manage events", granted: true },
       { name: "Manage polls and voting", granted: true },
       { name: "Manage users and roles", granted: false },
@@ -44,9 +46,10 @@ const roleInfo = {
     icon: Users,
     description: "Participate in union activities",
     permissions: [
+      { name: "Post and interact in forum", granted: true },
+      { name: "Join calendar events", granted: true },
       { name: "Create and manage events", granted: false },
       { name: "Manage polls and voting", granted: false },
-      { name: "Manage users and roles", granted: false },
       { name: "Post announcements", granted: false },
       { name: "Access analytics", granted: false },
       { name: "Delete content", granted: false },
@@ -100,40 +103,13 @@ export default function DashboardPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">Manage your profile and view your permissions</p>
+          <p className="text-muted-foreground">Manage your profile, view your permissions, and send anonymous feedback</p>
         </div>
-
-        {/* Role Selection Demo */}
-        <Card className="mb-8 bg-primary/10 border-primary">
-          <CardContent className="py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg mb-1 text-foreground">
-                  Your Current Role: <span className="text-primary">{currentRole}</span>
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Signed in as {user.username}
-                  {user.role !== currentRole && " (Demo mode active)"}
-                </p>
-              </div>
-              <Select value={currentRole} onValueChange={(value) => setDemoRole(value as UserRole)}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="organizer">Organizer</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* User Profile */}
           <div className="lg:col-span-1">
-            <RoleCard role={currentRole} roleInfo={roleInfo[currentRole]} />
+            <RoleCard user={user} role={currentRole} roleInfo={roleInfo[currentRole]} />
           </div>
 
           {/* Permissions Table */}
@@ -165,101 +141,6 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
-
-          {/* Account Overview Card (from profile) */}
-          <div className="mb-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg bg-muted/50 text-center">
-                    <div className="text-3xl font-bold text-primary mb-1">Active</div>
-                    <div className="text-sm text-muted-foreground">Account Status</div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/50 text-center">
-                    <div className="text-3xl font-bold text-primary mb-1 capitalize">{user.role}</div>
-                    <div className="text-sm text-muted-foreground">Member Role</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Role Description Card (from profile) */}
-          <div className="mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Role Permissions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {user.role === "admin" && (
-                    <>
-                      <div className="flex items-start gap-3">
-                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
-                        <div>
-                          <p className="font-medium">Full Administrative Access</p>
-                          <p className="text-sm text-muted-foreground">Manage users, unions, and all platform content</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
-                        <div>
-                          <p className="font-medium">Moderate Content</p>
-                          <p className="text-sm text-muted-foreground">Delete any posts, comments, or inappropriate content</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  {user.role === "organizer" && (
-                    <>
-                      <div className="flex items-start gap-3">
-                        <div className="h-2 w-2 rounded-full bg-blue-500 mt-2" />
-                        <div>
-                          <p className="font-medium">Union Management</p>
-                          <p className="text-sm text-muted-foreground">Create and manage union posts and events</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="h-2 w-2 rounded-full bg-blue-500 mt-2" />
-                        <div>
-                          <p className="font-medium">Create Polls</p>
-                          <p className="text-sm text-muted-foreground">Conduct votes and gather member feedback</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  {user.role === "member" && (
-                    <>
-                      <div className="flex items-start gap-3">
-                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
-                        <div>
-                          <p className="font-medium">Create Posts</p>
-                          <p className="text-sm text-muted-foreground">Share updates and participate in discussions</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
-                        <div>
-                          <p className="font-medium">Comment & Vote</p>
-                          <p className="text-sm text-muted-foreground">Engage with posts and participate in polls</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
-                        <div>
-                          <p className="font-medium">Anonymous Feedback</p>
-                          <p className="text-sm text-muted-foreground">Submit confidential feedback and concerns</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
         {/* Anonymous Feedback */}
         <div className="mt-8">
