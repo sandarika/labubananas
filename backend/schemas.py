@@ -64,6 +64,8 @@ class Post(BaseModel):
     created_at: datetime.datetime
     feedbacks: List[Feedback] = []
     comments: List[Comment] = []
+    upvotes: int = 0
+    downvotes: int = 0
 
     class Config:
         from_attributes = True

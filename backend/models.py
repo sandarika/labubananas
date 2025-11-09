@@ -39,6 +39,7 @@ class Post(Base):
     union = relationship("Union", back_populates="posts")
     feedbacks = relationship("Feedback", back_populates="post", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
+    votes = relationship("PostVote", back_populates="post", cascade="all, delete-orphan")
 
 
 class Feedback(Base):
@@ -64,6 +65,7 @@ class User(Base):
 
     comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
     union_memberships = relationship("UnionMember", back_populates="user", cascade="all, delete-orphan")
+    post_votes = relationship("PostVote", back_populates="user", cascade="all, delete-orphan")
 
 
 class UnionMember(Base):
@@ -160,3 +162,17 @@ class Comment(Base):
 
     post = relationship("Post", back_populates="comments")
     user = relationship("User", back_populates="comments")
+
+
+class PostVote(Base):
+    __tablename__ = "post_votes"
+    __table_args__ = (UniqueConstraint("post_id", "user_id", name="uq_post_user_vote"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    vote_type = Column(String, nullable=False)  # "up" or "down"
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    post = relationship("Post", back_populates="votes")
+    user = relationship("User", back_populates="post_votes")

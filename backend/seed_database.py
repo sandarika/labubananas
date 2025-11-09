@@ -19,13 +19,14 @@ import random
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.db import SessionLocal, engine, Base
-from backend.models import User, Union, Post, Comment, Poll, PollOption, Vote, Event, EventAttendee, Feedback, UnionMember
+from backend.models import User, Union, Post, Comment, Poll, PollOption, Vote, Event, EventAttendee, Feedback, UnionMember, PostVote
 from backend.security import get_password_hash
 
 
 def clear_database(db):
     """Clear all existing data from the database."""
     print("🗑️  Clearing existing data...")
+    db.query(PostVote).delete()
     db.query(Vote).delete()
     db.query(PollOption).delete()
     db.query(Poll).delete()
@@ -492,6 +493,64 @@ def create_comments(db, users, posts):
     return comments
 
 
+def create_post_votes(db, users, posts):
+    """Create upvotes and downvotes on posts from various users."""
+    print("\n👍 Creating post votes...")
+    
+    votes_data = []
+    
+    # Posts with high engagement get more votes
+    high_engagement_posts = [posts[0], posts[1], posts[3], posts[10], posts[11], posts[15]]  # Important posts
+    medium_engagement_posts = [posts[2], posts[4], posts[5], posts[7], posts[12], posts[14]]
+    low_engagement_posts = [posts[6], posts[8], posts[9], posts[13], posts[16], posts[17], posts[18]]
+    
+    # High engagement posts - 10-20 upvotes
+    for post in high_engagement_posts:
+        num_votes = random.randint(12, 22)
+        voters = random.sample(users[1:], min(num_votes, len(users)-1))  # Exclude admin sometimes
+        for voter in voters:
+            # 90% upvotes, 10% downvotes
+            vote_type = "up" if random.random() < 0.9 else "down"
+            votes_data.append({"post": post, "user": voter, "vote_type": vote_type})
+    
+    # Medium engagement posts - 5-12 upvotes
+    for post in medium_engagement_posts:
+        num_votes = random.randint(5, 12)
+        voters = random.sample(users[1:], min(num_votes, len(users)-1))
+        for voter in voters:
+            vote_type = "up" if random.random() < 0.85 else "down"
+            votes_data.append({"post": post, "user": voter, "vote_type": vote_type})
+    
+    # Low engagement posts - 2-6 upvotes
+    for post in low_engagement_posts:
+        num_votes = random.randint(2, 6)
+        voters = random.sample(users[1:], min(num_votes, len(users)-1))
+        for voter in voters:
+            vote_type = "up" if random.random() < 0.8 else "down"
+            votes_data.append({"post": post, "user": voter, "vote_type": vote_type})
+    
+    votes = []
+    for vote_data in votes_data:
+        # Check if this user already voted on this post
+        existing = db.query(PostVote).filter(
+            PostVote.post_id == vote_data["post"].id,
+            PostVote.user_id == vote_data["user"].id
+        ).first()
+        
+        if not existing:
+            vote = PostVote(
+                post_id=vote_data["post"].id,
+                user_id=vote_data["user"].id,
+                vote_type=vote_data["vote_type"]
+            )
+            db.add(vote)
+            votes.append(vote)
+    
+    db.commit()
+    print(f"✅ Created {len(votes)} post votes")
+    return votes
+
+
 def create_polls(db, users, unions):
     """Create polls with options and votes."""
     print("\n📊 Creating polls...")
@@ -946,6 +1005,7 @@ def main():
         assign_union_memberships(db, users, unions)
         posts = create_posts(db, users, unions)
         comments = create_comments(db, users, posts)
+        post_votes = create_post_votes(db, users, posts)
         polls = create_polls(db, users, unions)
         events = create_events(db, users, unions)
         feedback = create_feedback(db, posts)
@@ -958,6 +1018,7 @@ def main():
         print(f"   - {len(unions)} unions created (including Banana Plantation Workers United! 🍌)")
         print(f"   - {len(posts)} posts created")
         print(f"   - {len(comments)} comments created")
+        print(f"   - {len(post_votes)} post votes created")
         print(f"   - {len(polls)} polls created")
         print(f"   - {len(events)} events created")
         print(f"   - {len(feedback)} feedback entries created")

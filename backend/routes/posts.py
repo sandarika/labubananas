@@ -21,12 +21,30 @@ def create_post_for_union(union_id: int, post: schemas.PostCreate, db: Session =
     db.add(new)
     db.commit()
     db.refresh(new)
+    # Initialize vote counts for new post
+    new.upvotes = 0
+    new.downvotes = 0
     return new
 
 
 @router.get("/union/{union_id}", response_model=List[schemas.Post])
 def list_posts_for_union(union_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return db.query(models.Post).filter(models.Post.union_id == union_id).offset(skip).limit(limit).all()
+    posts = db.query(models.Post).filter(models.Post.union_id == union_id).offset(skip).limit(limit).all()
+    
+    # Add vote counts to each post
+    for post in posts:
+        upvotes = db.query(models.PostVote).filter(
+            models.PostVote.post_id == post.id,
+            models.PostVote.vote_type == "up"
+        ).count()
+        downvotes = db.query(models.PostVote).filter(
+            models.PostVote.post_id == post.id,
+            models.PostVote.vote_type == "down"
+        ).count()
+        post.upvotes = upvotes
+        post.downvotes = downvotes
+    
+    return posts
 
 
 @router.get("/{post_id}", response_model=schemas.Post)
@@ -34,6 +52,19 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
     p = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Add vote counts
+    upvotes = db.query(models.PostVote).filter(
+        models.PostVote.post_id == p.id,
+        models.PostVote.vote_type == "up"
+    ).count()
+    downvotes = db.query(models.PostVote).filter(
+        models.PostVote.post_id == p.id,
+        models.PostVote.vote_type == "down"
+    ).count()
+    p.upvotes = upvotes
+    p.downvotes = downvotes
+    
     return p
 
 

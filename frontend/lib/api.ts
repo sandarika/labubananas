@@ -35,6 +35,8 @@ export interface Post {
   created_at: string;
   feedbacks?: Feedback[];
   comments?: Comment[];
+  upvotes?: number;
+  downvotes?: number;
 }
 
 export interface PostCreate {

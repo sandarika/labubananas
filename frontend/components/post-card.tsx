@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +42,16 @@ export function PostCard({
   const [isExpanded, setIsExpanded] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [commentCount, setCommentCount] = useState(initialComments)
+
+  // Update upvotes when initialUpvotes prop changes (data loaded from API)
+  useEffect(() => {
+    setUpvotes(initialUpvotes)
+  }, [initialUpvotes])
+
+  // Update comment count when initialComments prop changes (data loaded from API)
+  useEffect(() => {
+    setCommentCount(initialComments)
+  }, [initialComments])
 
   const handleVote = (type: "up" | "down") => {
     if (voteState === type) {
