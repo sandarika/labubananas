@@ -393,9 +393,6 @@ export default function ForumPage() {
                 <span className="h-2 w-2 bg-green-500 rounded-full" />
                 {isSignedIn && user ? `Signed in as ${user.username} (${user.role})` : "You are browsing anonymously"}
               </Badge>
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
-                What does this mean?
-              </Button>
             </div>
 
             {/* Sort and Time Range Selector */}

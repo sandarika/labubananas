@@ -47,7 +47,7 @@ export function AIChatbotButton() {
       {isOpen && (
         <Card className="fixed bottom-24 right-6 z-50 w-96 shadow-2xl">
           <CardHeader className="bg-primary">
-            <CardTitle className="text-primary-foreground">AI Legal Assistant</CardTitle>
+            <CardTitle className="text-primary-foreground">Legal Assistant</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
             <div className="space-y-4 mb-4 max-h-80 overflow-y-auto">

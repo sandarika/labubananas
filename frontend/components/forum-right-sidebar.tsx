@@ -73,11 +73,8 @@ export function ForumRightSidebar() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Bot className="h-4 w-4 text-banana-dark" />
-              AI Labor Assistant
+              Legal Union Assistant
             </CardTitle>
-            <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-              Beta
-            </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">Get instant answers about union and labor topics</p>
         </CardHeader>
