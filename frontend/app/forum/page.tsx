@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { ForumLeftSidebar } from "@/components/forum-left-sidebar"
 import { ForumRightSidebar } from "@/components/forum-right-sidebar"
@@ -8,14 +8,18 @@ import { PostCard } from "@/components/post-card"
 import { PollCard } from "@/components/poll-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, SlidersHorizontal, Bot, TrendingUp, Flame, Clock } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Search, SlidersHorizontal, Bot, TrendingUp, Flame, Clock, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { useUser } from "@/lib/user-context"
 import { UnionAssistantWidget } from "@/components/union-assistant-widget"
+import { postsApi, pollsApi, type Post as ApiPost, type Poll as ApiPoll } from "@/lib/api"
 
-const posts = [
+const mockPosts = [
   {
     id: 1,
     title: "Contract Negotiations Update - Construction Workers United",
@@ -90,12 +94,105 @@ export default function ForumPage() {
   const [searchValue, setSearchValue] = useState("")
   const [showChatbot, setShowChatbot] = useState(false)
   const { user, isSignedIn } = useUser()
+  
+  // State for API data
+  const [apiPosts, setApiPosts] = useState<ApiPost[]>([])
+  const [polls, setPolls] = useState<ApiPoll[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Create post dialog state
+  const [showCreatePost, setShowCreatePost] = useState(false)
+  const [newPostTitle, setNewPostTitle] = useState("")
+  const [newPostContent, setNewPostContent] = useState("")
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState("")
+
+  // Fetch posts and polls from API
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      // Fetch posts from union ID 1 (or adjust as needed)
+      const postsData = await postsApi.getPostsByUnion(1).catch(() => [])
+      setApiPosts(postsData)
+      
+      // Fetch polls
+      const pollsData = await pollsApi.getPolls().catch(() => [])
+      setPolls(pollsData)
+      
+      setError(null)
+    } catch (err) {
+      console.error("Error fetching forum data:", err)
+      setError("Failed to load forum data. Using mock data.")
+      // Keep mock data as fallback
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const handleCreatePost = async () => {
+    if (!newPostTitle.trim() || !newPostContent.trim()) {
+      setCreateError("Please fill in both title and content")
+      return
+    }
+
+    if (!isSignedIn) {
+      setCreateError("You must be signed in to create a post")
+      return
+    }
+
+    setCreating(true)
+    setCreateError("")
+
+    try {
+      await postsApi.createPost(1, {
+        title: newPostTitle,
+        content: newPostContent,
+      })
+      
+      // Refresh posts
+      await fetchData()
+      
+      // Reset form
+      setNewPostTitle("")
+      setNewPostContent("")
+      setShowCreatePost(false)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create post"
+      console.error("Error creating post:", err)
+      setCreateError(errorMessage)
+    } finally {
+      setCreating(false)
+    }
+  }
 
   const filterIcons = {
     best: TrendingUp,
     hot: Flame,
     popular: Clock,
   }
+
+  // Transform API posts to match PostCard props
+  const transformedPosts = apiPosts.map((post) => ({
+    id: post.id,
+    title: post.title,
+    author: "User", // API doesn't return author yet
+    role: "Member" as const,
+    isAnonymous: false,
+    category: "General",
+    content: post.content,
+    upvotes: 0, // API doesn't track upvotes yet
+    comments: post.feedbacks?.length || 0,
+    time: new Date(post.created_at).toLocaleString(),
+    isPinned: false,
+  }))
+
+  // Use mock data as fallback if no API data
+  const displayPosts = transformedPosts.length > 0 ? transformedPosts : mockPosts
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -110,10 +207,22 @@ export default function ForumPage() {
 
           {/* Main Feed */}
           <main className="flex-1 min-w-0 space-y-4">
+            {loading && (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading forum data...
+              </div>
+            )}
+            
+            {error && (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                {error}
+              </div>
+            )}
+            
             <div className="flex items-center justify-between">
               <Badge variant="secondary" className="gap-2 bg-banana-light border-banana-DEFAULT text-foreground">
                 <span className="h-2 w-2 bg-green-500 rounded-full" />
-                {isSignedIn && user ? `Signed in as ${user.name} (${user.role})` : "You are browsing anonymously"}
+                {isSignedIn && user ? `Signed in as ${user.username} (${user.role})` : "You are browsing anonymously"}
               </Badge>
               <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
                 What does this mean?
@@ -158,6 +267,73 @@ export default function ForumPage() {
                 />
               </div>
 
+              {/* Create Post Button */}
+              {isSignedIn && (
+                <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2 shrink-0 bg-banana-DEFAULT text-foreground hover:bg-banana-dark shadow-sm">
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline">New Post</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Post</DialogTitle>
+                      <DialogDescription>
+                        Share your thoughts with the union community
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      {createError && (
+                        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                          {createError}
+                        </div>
+                      )}
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="post-title">Title</Label>
+                        <Input
+                          id="post-title"
+                          placeholder="What's your post about?"
+                          value={newPostTitle}
+                          onChange={(e) => setNewPostTitle(e.target.value)}
+                          disabled={creating}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="post-content">Content</Label>
+                        <Textarea
+                          id="post-content"
+                          placeholder="Share your thoughts..."
+                          value={newPostContent}
+                          onChange={(e) => setNewPostContent(e.target.value)}
+                          rows={6}
+                          disabled={creating}
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowCreatePost(false)}
+                          disabled={creating}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleCreatePost}
+                          disabled={creating || !newPostTitle.trim() || !newPostContent.trim()}
+                          className="bg-banana-DEFAULT text-foreground hover:bg-banana-dark"
+                        >
+                          {creating ? "Creating..." : "Create Post"}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+
               {/* Filter Dropdown */}
               <Button
                 variant="outline"
@@ -170,11 +346,16 @@ export default function ForumPage() {
 
             {/* Posts Feed */}
             <div className="space-y-5">
-              {posts.map((post, index) => (
+              {displayPosts.map((post, index) => (
                 <div key={post.id}>
                   <PostCard {...post} />
                   {/* Insert poll after 2nd post */}
-                  {index === 1 && (
+                  {index === 1 && polls.length > 0 && (
+                    <div className="mt-5">
+                      <PollCard poll={polls[0]} showInFeed />
+                    </div>
+                  )}
+                  {index === 1 && polls.length === 0 && (
                     <div className="mt-5">
                       <PollCard {...samplePoll} showInFeed />
                     </div>

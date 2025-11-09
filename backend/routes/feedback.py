@@ -11,6 +11,16 @@ models.Base.metadata.create_all(bind=engine)
 router = APIRouter()
 
 
+@router.post("/", response_model=schemas.Feedback)
+def create_general_feedback(feedback: schemas.FeedbackCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Create general feedback not tied to a specific post"""
+    new = models.Feedback(post_id=None, message=feedback.message, anonymous=feedback.anonymous)
+    db.add(new)
+    db.commit()
+    db.refresh(new)
+    return new
+
+
 @router.post("/post/{post_id}", response_model=schemas.Feedback)
 def create_feedback_for_post(post_id: int, feedback: schemas.FeedbackCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     p = db.query(models.Post).filter(models.Post.id == post_id).first()

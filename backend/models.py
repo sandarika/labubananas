@@ -41,7 +41,7 @@ class Feedback(Base):
     __tablename__ = "feedbacks"
 
     id = Column(Integer, primary_key=True, index=True)
-    post_id = Column(Integer, ForeignKey("posts.id"))
+    post_id = Column(Integer, ForeignKey("posts.id"), nullable=True)
     anonymous = Column(Boolean, default=False)
     message = Column(Text)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

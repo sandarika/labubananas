@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RoleCard } from "@/components/role-card"
 import { FeedbackForm } from "@/components/feedback-form"
 import { Shield, Users, Megaphone, CheckCircle2, XCircle } from "lucide-react"
+import { useUser } from "@/lib/user-context"
+import { useRouter } from "next/navigation"
 
 type UserRole = "admin" | "organizer" | "member"
 
@@ -54,7 +56,46 @@ const roleInfo = {
 }
 
 export default function DashboardPage() {
-  const [currentRole, setCurrentRole] = useState<UserRole>("member")
+  const { user, isSignedIn, loading } = useUser()
+  const router = useRouter()
+  const [demoRole, setDemoRole] = useState<UserRole | null>(null)
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    if (!loading && !isSignedIn) {
+      router.push("/sign-in")
+    }
+  }, [loading, isSignedIn, router])
+
+  // Set user's actual role when loaded
+  useEffect(() => {
+    if (user) {
+      const userRole = user.role as UserRole
+      if (userRole in roleInfo) {
+        setDemoRole(userRole)
+      } else {
+        setDemoRole("member")
+      }
+    }
+  }, [user])
+
+  // Use demo role for display (allows testing different roles)
+  const currentRole = demoRole || "member"
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isSignedIn || !user) {
+    return null // Will redirect
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,10 +112,15 @@ export default function DashboardPage() {
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg mb-1 text-foreground">Demo Mode</h3>
-                <p className="text-sm text-muted-foreground">Change your role to see different permissions</p>
+                <h3 className="font-semibold text-lg mb-1 text-foreground">
+                  Your Current Role: <span className="text-primary">{currentRole}</span>
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Signed in as {user.username}
+                  {user.role !== currentRole && " (Demo mode active)"}
+                </p>
               </div>
-              <Select value={currentRole} onValueChange={(value) => setCurrentRole(value as UserRole)}>
+              <Select value={currentRole} onValueChange={(value) => setDemoRole(value as UserRole)}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>

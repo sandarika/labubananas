@@ -7,20 +7,54 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { MessageSquare } from "lucide-react"
+import { feedbackApi } from "@/lib/api"
 
-export function FeedbackForm() {
+interface FeedbackFormProps {
+  postId?: number
+}
+
+export function FeedbackForm({ postId }: FeedbackFormProps) {
   const [feedback, setFeedback] = useState("")
+  const [anonymous, setAnonymous] = useState(true)
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (feedback.trim()) {
+    if (!feedback.trim()) {
+      setError("Please enter your feedback")
+      return
+    }
+
+    setLoading(true)
+    setError("")
+
+    try {
+      if (postId) {
+        await feedbackApi.createFeedback(postId, {
+          message: feedback,
+          anonymous,
+        })
+      } else {
+        await feedbackApi.createGeneralFeedback({
+          message: feedback,
+          anonymous,
+        })
+      }
+      
       setSubmitted(true)
       setTimeout(() => {
         setSubmitted(false)
         setFeedback("")
+        setAnonymous(true)
       }, 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit feedback")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -46,6 +80,12 @@ export function FeedbackForm() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                {error}
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="feedback">Your Feedback</Label>
               <Textarea
@@ -57,8 +97,27 @@ export function FeedbackForm() {
                 className="resize-none"
               />
             </div>
-            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              Submit Anonymously
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="anonymous" 
+                checked={anonymous}
+                onCheckedChange={(checked) => setAnonymous(checked === true)}
+              />
+              <Label 
+                htmlFor="anonymous" 
+                className="text-sm font-normal cursor-pointer"
+              >
+                Submit anonymously (your identity will not be recorded)
+              </Label>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={loading}
+            >
+              {loading ? "Submitting..." : "Submit Feedback"}
             </Button>
           </form>
         )}

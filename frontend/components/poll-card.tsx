@@ -1,36 +1,138 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { pollsApi, type Poll, type PollResults as ApiPollResults } from "@/lib/api"
 
 type PollOption = {
   label: string
   votes: number
 }
 
-type PollCardProps = {
+type LegacyPollCardProps = {
   question: string
   options: PollOption[]
   totalVotes: number
   showInFeed?: boolean
+  poll?: never
 }
 
-export function PollCard({ question, options, totalVotes, showInFeed = false }: PollCardProps) {
+type ApiPollCardProps = {
+  poll: Poll
+  showInFeed?: boolean
+  question?: never
+  options?: never
+  totalVotes?: never
+}
+
+type PollCardProps = LegacyPollCardProps | ApiPollCardProps
+
+export function PollCard(props: PollCardProps) {
+  const { showInFeed = false } = props
+  
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [hasVoted, setHasVoted] = useState(false)
   const [isAnonymous, setIsAnonymous] = useState(true)
+  const [pollResults, setPollResults] = useState<ApiPollResults | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleVote = (index: number) => {
-    if (!hasVoted) {
-      setSelectedOption(index)
-      setHasVoted(true)
+  // Determine if using API poll or legacy format
+  const isApiPoll = 'poll' in props && props.poll !== undefined
+  
+  // Load results if API poll
+  useEffect(() => {
+    if (isApiPoll && props.poll) {
+      loadResults(props.poll.id)
+    }
+  }, [isApiPoll, props.poll?.id])
+
+  const loadResults = async (pollId: number) => {
+    try {
+      const results = await pollsApi.getResults(pollId)
+      setPollResults(results)
+    } catch (err) {
+      console.error("Failed to load poll results:", err)
     }
   }
+
+  const handleVote = async (index: number) => {
+    if (hasVoted || !isApiPoll || !props.poll) {
+      if (!hasVoted && !isApiPoll) {
+        // Legacy poll - just show results
+        setSelectedOption(index)
+        setHasVoted(true)
+      }
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const optionId = props.poll.options[index].id
+      const results = await pollsApi.vote(props.poll.id, optionId)
+      setPollResults(results)
+      setSelectedOption(index)
+      setHasVoted(true)
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to submit vote"
+      setError(errorMsg)
+      // If already voted, still show results
+      if (errorMsg.includes("already voted")) {
+        setHasVoted(true)
+        await loadResults(props.poll.id)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Get poll data based on type
+  const getQuestion = () => {
+    if (isApiPoll && props.poll) return props.poll.question
+    if ('question' in props) return props.question
+    return ""
+  }
+
+  const getOptions = () => {
+    if (pollResults) {
+      // Use API results
+      return pollResults.results.map(r => ({
+        label: r.text,
+        votes: r.votes,
+        id: r.option_id
+      }))
+    } else if (isApiPoll && props.poll) {
+      // Use API poll options (no results yet)
+      return props.poll.options.map(o => ({
+        label: o.text,
+        votes: 0,
+        id: o.id
+      }))
+    } else if ('options' in props) {
+      // Legacy format
+      return props.options.map((o, idx) => ({ ...o, id: idx }))
+    }
+    return []
+  }
+
+  const getTotalVotes = () => {
+    if (pollResults) {
+      return pollResults.results.reduce((sum, r) => sum + r.votes, 0)
+    }
+    if ('totalVotes' in props) return props.totalVotes
+    return 0
+  }
+
+  const question = getQuestion()
+  const options = getOptions()
+  const totalVotes = getTotalVotes() || 0
 
   return (
     <Card className={cn("border-banana-dark/10", showInFeed && "hover:shadow-md transition-shadow")}>
@@ -45,6 +147,12 @@ export function PollCard({ question, options, totalVotes, showInFeed = false }: 
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {error && (
+          <div className="p-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+            {error}
+          </div>
+        )}
+        
         {/* Poll Options */}
         <div className="space-y-2">
           {options.map((option, index) => {
@@ -53,12 +161,12 @@ export function PollCard({ question, options, totalVotes, showInFeed = false }: 
 
             return (
               <button
-                key={index}
+                key={option.id ?? index}
                 onClick={() => handleVote(index)}
-                disabled={hasVoted}
+                disabled={hasVoted || loading}
                 className={cn(
                   "w-full text-left relative overflow-hidden rounded-lg border transition-all p-3",
-                  hasVoted ? "cursor-default" : "hover:border-banana-DEFAULT hover:bg-banana-light/20 cursor-pointer",
+                  hasVoted || loading ? "cursor-default" : "hover:border-banana-DEFAULT hover:bg-banana-light/20 cursor-pointer",
                   isSelected && hasVoted && "border-banana-DEFAULT",
                 )}
               >
@@ -101,7 +209,7 @@ export function PollCard({ question, options, totalVotes, showInFeed = false }: 
 
           {!hasVoted && (
             <div className="flex items-center gap-2">
-              <Switch id="anonymous-poll" checked={isAnonymous} onCheckedChange={setIsAnonymous} />
+              <Switch id="anonymous-poll" checked={isAnonymous} onCheckedChange={setIsAnonymous} disabled />
               <Label htmlFor="anonymous-poll" className="text-xs cursor-pointer">
                 Anonymous
               </Label>
@@ -112,11 +220,11 @@ export function PollCard({ question, options, totalVotes, showInFeed = false }: 
         {!hasVoted && (
           <Button
             size="sm"
-            disabled={selectedOption === null}
+            disabled={selectedOption === null || loading}
             onClick={() => selectedOption !== null && handleVote(selectedOption)}
             className="w-full bg-banana-DEFAULT text-foreground hover:bg-banana-dark"
           >
-            Submit Vote
+            {loading ? "Submitting..." : "Submit Vote"}
           </Button>
         )}
       </CardContent>

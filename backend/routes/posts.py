@@ -4,15 +4,16 @@ from typing import List
 
 from .. import models, schemas
 from ..db import get_db, engine
-from ..security import require_roles
+from ..security import require_roles, get_current_user
 
 models.Base.metadata.create_all(bind=engine)
 
 router = APIRouter()
 
 
-@router.post("/union/{union_id}", response_model=schemas.Post, dependencies=[Depends(require_roles(["organizer", "admin"]))])
-def create_post_for_union(union_id: int, post: schemas.PostCreate, db: Session = Depends(get_db)):
+@router.post("/union/{union_id}", response_model=schemas.Post)
+def create_post_for_union(union_id: int, post: schemas.PostCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    """Create a post in a union. All authenticated users can create posts."""
     u = db.query(models.Union).filter(models.Union.id == union_id).first()
     if not u:
         raise HTTPException(status_code=404, detail="Union not found")

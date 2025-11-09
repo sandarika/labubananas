@@ -7,7 +7,7 @@ import os
 load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import api_router
-from .db import engine, Base
+from .db import engine, Base, get_db
 
 # Make sure models are imported so SQLAlchemy can create tables
 from . import models  # noqa: F401
@@ -25,6 +25,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(api_router, prefix="/api")
+
+
+@app.on_event("startup")
+def startup_event():
+    """Create default data on startup if it doesn't exist"""
+    db = next(get_db())
+    try:
+        # Create default union if none exists
+        union_count = db.query(models.Union).count()
+        if union_count == 0:
+            default_union = models.Union(
+                name="General Union",
+                description="Default union for all members"
+            )
+            db.add(default_union)
+            db.commit()
+            print("✓ Created default union")
+    finally:
+        db.close()
 
 
 @app.get("/")

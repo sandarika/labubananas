@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CalendarIcon, Plus, Clock, MapPin, Users, ChevronLeft, ChevronRight, List } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { eventsApi, type Event as ApiEvent } from "@/lib/api"
+import { useUser } from "@/lib/user-context"
 
 type Event = {
   id: number
@@ -20,7 +22,8 @@ type Event = {
   organizer: string
 }
 
-const events: Event[] = [
+// Mock events as fallback
+const mockEvents: Event[] = [
   {
     id: 1,
     title: "Monthly Union Meeting",
@@ -97,6 +100,7 @@ const categoryColors: Record<Event["category"], string> = {
 }
 
 export default function CalendarPage() {
+  const { user, isSignedIn } = useUser()
   const [rsvpStatus, setRsvpStatus] = useState<Record<number, boolean>>({
     1: true,
     3: true,
@@ -105,7 +109,65 @@ export default function CalendarPage() {
   const [filterMode, setFilterMode] = useState<"all" | "my">("all")
   const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1)) // January 2025
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [isAdmin, setIsAdmin] = useState(true) // Mock admin status
+  const [isAdmin, setIsAdmin] = useState(false)
+  
+  // API state
+  const [apiEvents, setApiEvents] = useState<ApiEvent[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load events from API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true)
+        const eventsData = await eventsApi.getEvents()
+        setApiEvents(eventsData)
+        setError(null)
+      } catch (err) {
+        console.error("Failed to load events:", err)
+        setError("Failed to load events. Using mock data.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEvents()
+  }, [])
+
+  // Set admin status based on user role
+  useEffect(() => {
+    if (user && (user.role === "admin" || user.role === "organizer")) {
+      setIsAdmin(true)
+    } else {
+      setIsAdmin(false)
+    }
+  }, [user])
+
+  // Transform API events to match display format
+  const transformApiEvents = (apiEvent: ApiEvent): Event => {
+    const startTime = new Date(apiEvent.start_time)
+    const endTime = apiEvent.end_time ? new Date(apiEvent.end_time) : null
+    
+    const timeString = endTime 
+      ? `${startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
+      : startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    
+    return {
+      id: apiEvent.id,
+      title: apiEvent.title,
+      date: startTime.toISOString().split('T')[0],
+      time: timeString,
+      location: "Union Hall", // Default location, API doesn't have this yet
+      category: "Meeting", // Default category, API doesn't have this yet
+      attendees: 0, // API doesn't track attendees yet
+      canEdit: isAdmin,
+      organizer: "Admin"
+    }
+  }
+
+  const events = apiEvents.length > 0 
+    ? apiEvents.map(transformApiEvents)
+    : mockEvents
 
   const toggleRSVP = (eventId: number) => {
     setRsvpStatus((prev) => ({
@@ -114,11 +176,11 @@ export default function CalendarPage() {
     }))
   }
 
-  const filteredEvents = filterMode === "my" ? events.filter((event) => rsvpStatus[event.id]) : events
+  const filteredEvents = filterMode === "my" ? events.filter((event: Event) => rsvpStatus[event.id]) : events
 
   const getEventsForDate = (date: Date) => {
     const dateStr = date.toISOString().split("T")[0]
-    return filteredEvents.filter((event) => event.date === dateStr)
+    return filteredEvents.filter((event: Event) => event.date === dateStr)
   }
 
   const goToPreviousMonth = () => {
@@ -160,8 +222,8 @@ export default function CalendarPage() {
   const monthName = currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })
 
   const upcomingEvents = filteredEvents
-    .filter((event) => rsvpStatus[event.id])
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .filter((event: Event) => rsvpStatus[event.id])
+    .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3)
 
   return (
@@ -320,10 +382,10 @@ export default function CalendarPage() {
 
                               {/* Event dots */}
                               <div className="flex flex-wrap gap-1">
-                                {dayEvents.slice(0, 3).map((event) => (
+                                {dayEvents.slice(0, 3).map((event: Event) => (
                                   <div
                                     key={event.id}
-                                    className="h-2 w-2 rounded-full"
+                                    className="h-1 rounded-sm mb-[1px]"
                                     style={{ backgroundColor: categoryColors[event.category] }}
                                     title={event.title}
                                   />
@@ -357,7 +419,7 @@ export default function CalendarPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredEvents.map((event) => (
+                  filteredEvents.map((event: Event) => (
                     <Card
                       key={event.id}
                       className="rounded-xl shadow-sm border-[#e5e5e5] hover:shadow-md transition-shadow"
@@ -458,7 +520,7 @@ export default function CalendarPage() {
                 {upcomingEvents.length === 0 ? (
                   <p className="text-sm text-[#737373]">No upcoming events</p>
                 ) : (
-                  upcomingEvents.map((event) => (
+                  upcomingEvents.map((event: Event) => (
                     <div
                       key={event.id}
                       className="rounded-lg border border-[#e5e5e5] p-3 hover:border-[#F2C94C] transition-colors cursor-pointer"
@@ -539,7 +601,7 @@ export default function CalendarPage() {
           </DialogHeader>
           <div className="space-y-3 mt-4">
             {selectedDate &&
-              getEventsForDate(selectedDate).map((event) => (
+              getEventsForDate(selectedDate).map((event: Event) => (
                 <div key={event.id} className="rounded-lg border border-[#e5e5e5] p-4">
                   <div className="flex items-start justify-between mb-2">
                     <Badge

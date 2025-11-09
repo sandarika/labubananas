@@ -14,22 +14,23 @@ import { useUser } from "@/lib/user-context"
 
 export default function SignInPage() {
   const router = useRouter()
-  const { signIn } = useUser()
+  const { signIn, error: authError, loading } = useUser()
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   })
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    signIn({
-      name: "John Doe",
-      email: formData.email,
-      phone: "(555) 123-4567",
-      union: "United Workers Union",
-      role: "Member",
-    })
-    router.push("/forum")
+    setError("")
+    
+    try {
+      await signIn(formData.username, formData.password)
+      router.push("/forum")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed")
+    }
   }
 
   return (
@@ -51,14 +52,20 @@ export default function SignInPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                    {error}
+                  </div>
+                )}
+                
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="username">Username</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    id="username"
+                    type="text"
+                    placeholder="your-username"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     required
                   />
                 </div>
@@ -81,8 +88,8 @@ export default function SignInPage() {
                   </Link>
                 </div>
 
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                  Sign In
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
+                  {loading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
 
