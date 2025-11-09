@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Navbar } from "@/components/navbar"
 import { useUser } from "@/lib/user-context"
 import { authApi } from "@/lib/api"
 
@@ -66,8 +65,6 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <div className="container mx-auto px-4 py-20">
         <div className="mx-auto max-w-md">
           <div className="text-center mb-8">

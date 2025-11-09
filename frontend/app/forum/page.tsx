@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Navbar } from "@/components/navbar"
 import { ForumLeftSidebar } from "@/components/forum-left-sidebar"
 import { ForumRightSidebar } from "@/components/forum-right-sidebar"
 import { PostCard } from "@/components/post-card"
@@ -196,8 +195,6 @@ export default function ForumPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       <div className="w-full">
         <div className="max-w-[1600px] mx-auto flex gap-6 px-4 py-6">
           {/* Left Sidebar - Hidden on mobile */}

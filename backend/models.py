@@ -19,9 +19,12 @@ class Union(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
     description = Column(Text, nullable=True)
+    industry = Column(String, nullable=True, index=True)  # e.g., "Healthcare", "Technology", "Education"
+    tags = Column(String, nullable=True)  # Comma-separated tags for filtering
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     posts = relationship("Post", back_populates="union", cascade="all, delete-orphan")
+    members = relationship("UnionMember", back_populates="union", cascade="all, delete-orphan")
 
 
 class Post(Base):
@@ -60,6 +63,22 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+    union_memberships = relationship("UnionMember", back_populates="user", cascade="all, delete-orphan")
+
+
+class UnionMember(Base):
+    __tablename__ = "union_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    union_id = Column(Integer, ForeignKey("unions.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    joined_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    union = relationship("Union", back_populates="members")
+    user = relationship("User", back_populates="union_memberships")
+
+    __table_args__ = (UniqueConstraint("union_id", "user_id", name="unique_union_member"),)
+
 
 
 class Event(Base):

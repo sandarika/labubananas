@@ -14,6 +14,7 @@ export function Navbar() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/forum", label: "Forum" },
+    { href: "/unions", label: "Unions" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/calendar", label: "Calendar" },
     { href: "/profile", label: "Profile" },
@@ -35,18 +36,22 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-6">
-          {links.map(
-            (link) =>
-              pathname !== link.href && (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm font-medium transition-colors hover:text-primary text-muted-foreground"
-                >
-                  {link.label}
-                </Link>
-              ),
-          )}
+          {links.map((link) => {
+            const isActive = pathname === link.href
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive
+                    ? "text-foreground bg-yellow-400 px-3 py-1.5 rounded-md"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
         </div>
 
         <div className="flex items-center gap-3">
@@ -54,7 +59,7 @@ export function Navbar() {
             <>
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4" />
-                <span className="font-medium">{user.name}</span>
+                <span className="font-medium">{user.username}</span>
                 <span className="text-muted-foreground">({user.role})</span>
               </div>
               <Button variant="ghost" size="sm" onClick={handleSignOut} className="font-medium">

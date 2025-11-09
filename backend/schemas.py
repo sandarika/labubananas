@@ -16,7 +16,7 @@ class Feedback(BaseModel):
     created_at: datetime.datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Comment User Schema
@@ -25,7 +25,7 @@ class CommentUser(BaseModel):
     username: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Comment Schema
@@ -47,7 +47,7 @@ class Comment(BaseModel):
     updated_at: datetime.datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Post Schemas
@@ -66,23 +66,29 @@ class Post(BaseModel):
     comments: List[Comment] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UnionCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    industry: Optional[str] = None
+    tags: Optional[str] = None  # Comma-separated tags
 
 
 class Union(BaseModel):
     id: int
     name: str
     description: Optional[str]
+    industry: Optional[str]
+    tags: Optional[str]
     created_at: datetime.datetime
     posts: List[Post] = []
+    member_count: int = 0
+    is_member: bool = False  # Whether current user is a member
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Auth & Users
@@ -99,7 +105,7 @@ class User(BaseModel):
     created_at: datetime.datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Token(BaseModel):
@@ -122,7 +128,7 @@ class EventCreator(BaseModel):
     username: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Event(BaseModel):
@@ -139,7 +145,7 @@ class Event(BaseModel):
     attendee_count: int = 0
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Polls & Voting
@@ -158,7 +164,7 @@ class PollOption(BaseModel):
     text: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Poll(BaseModel):
@@ -169,7 +175,7 @@ class Poll(BaseModel):
     options: List[PollOption]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class VoteCreate(BaseModel):

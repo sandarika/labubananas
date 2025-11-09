@@ -2,7 +2,6 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +22,6 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="container mx-auto px-4 py-20">
           <div className="mx-auto max-w-2xl space-y-4">
             <Skeleton className="h-12 w-64" />
@@ -91,8 +89,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <div className="container mx-auto px-4 py-20">
         <div className="mx-auto max-w-2xl">
           <h1 className="text-4xl font-bold mb-8">My Profile</h1>

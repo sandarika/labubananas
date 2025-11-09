@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { UserProvider } from "@/lib/user-context"
+import { LayoutWrapper } from "@/components/layout-wrapper"
 
 import { Manrope as V0_Font_Manrope, Geist_Mono as V0_Font_Geist_Mono, Arvo as V0_Font_Arvo } from "next/font/google"
 
@@ -46,7 +47,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <UserProvider>{children}</UserProvider>
+        <UserProvider>
+          <LayoutWrapper>{children}</LayoutWrapper>
+        </UserProvider>
         <Analytics />
       </body>
     </html>

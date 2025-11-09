@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Navbar } from "@/components/navbar"
 import { AIChatbotButton } from "@/components/ai-chatbot-button"
 import { MessageSquare, Calendar, Vote, Shield, Bell, Scale } from "lucide-react"
 
@@ -48,7 +47,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       <AIChatbotButton />
 
       {/* Hero Section */}

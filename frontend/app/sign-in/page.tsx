@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Navbar } from "@/components/navbar"
 import { useUser } from "@/lib/user-context"
 
 export default function SignInPage() {
@@ -35,8 +34,6 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <div className="container mx-auto px-4 py-20">
         <div className="mx-auto max-w-md">
           <div className="text-center mb-8">

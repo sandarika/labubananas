@@ -82,13 +82,19 @@ export interface Union {
   id: number;
   name: string;
   description: string | null;
+  industry: string | null;
+  tags: string | null;
   created_at: string;
   posts?: Post[];
+  member_count: number;
+  is_member: boolean;
 }
 
 export interface UnionCreate {
   name: string;
   description?: string;
+  industry?: string;
+  tags?: string;
 }
 
 export interface Event {
@@ -267,8 +273,16 @@ export const feedbackApi = {
 
 // Unions API
 export const unionsApi = {
-  async getUnions(skip: number = 0, limit: number = 100): Promise<Union[]> {
-    return fetchWithAuth(apiUrl(`/api/unions/?skip=${skip}&limit=${limit}`));
+  async getUnions(
+    skip: number = 0, 
+    limit: number = 100,
+    industry?: string,
+    search?: string
+  ): Promise<Union[]> {
+    let url = `/api/unions/?skip=${skip}&limit=${limit}`;
+    if (industry) url += `&industry=${encodeURIComponent(industry)}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    return fetchWithAuth(apiUrl(url));
   },
 
   async getUnion(unionId: number): Promise<Union> {
@@ -280,6 +294,26 @@ export const unionsApi = {
       method: "POST",
       body: JSON.stringify(union),
     });
+  },
+
+  async getIndustries(): Promise<string[]> {
+    return fetchWithAuth(apiUrl("/api/unions/industries"));
+  },
+
+  async joinUnion(unionId: number): Promise<{ message: string }> {
+    return fetchWithAuth(apiUrl(`/api/unions/${unionId}/join`), {
+      method: "POST",
+    });
+  },
+
+  async leaveUnion(unionId: number): Promise<{ message: string }> {
+    return fetchWithAuth(apiUrl(`/api/unions/${unionId}/leave`), {
+      method: "DELETE",
+    });
+  },
+
+  async getUnionMembers(unionId: number, skip: number = 0, limit: number = 100) {
+    return fetchWithAuth(apiUrl(`/api/unions/${unionId}/members?skip=${skip}&limit=${limit}`));
   },
 };
 
