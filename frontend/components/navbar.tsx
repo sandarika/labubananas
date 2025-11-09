@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useUser } from "@/lib/user-context"
 import { User, LogOut } from "lucide-react"
+import Image from "next/image"
 
 export function Navbar() {
   const pathname = usePathname()
@@ -32,7 +33,13 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
   <div className="container mx-auto grid grid-cols-[auto_1fr_auto] items-center h-16 px-4">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold banana-bounce">
-          <span className="text-4xl">🍌</span>
+          <Image
+            src="/bunch-emoji.png"
+            alt="BunchUp Logo"
+            width={40}
+            height={40}
+            className="w-10 h-10"
+          />
           <span className="text-foreground">BunchUp</span>
         </Link>
 

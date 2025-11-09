@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { AIChatbotButton } from "@/components/ai-chatbot-button"
@@ -53,7 +54,13 @@ export default function LandingPage() {
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="mx-auto max-w-3xl space-y-8">
           <div className="banana-bounce inline-block">
-            <span className="text-9xl">🍌</span>
+            <Image
+              src="/bunch-emoji.png"
+              alt="BunchUp Logo"
+              width={160}
+              height={160}
+              className="w-40 h-40"
+            />
           </div>
 
           <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl md:text-7xl text-balance">

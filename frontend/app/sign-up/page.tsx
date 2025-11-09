@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -68,7 +69,15 @@ export default function SignUpPage() {
       <div className="container mx-auto px-4 py-20">
         <div className="mx-auto max-w-md">
           <div className="text-center mb-8">
-            <span className="text-6xl inline-block banana-bounce">🍌</span>
+            <div className="inline-block banana-bounce">
+              <Image
+                src="/bunch-emoji.png"
+                alt="BunchUp Logo"
+                width={80}
+                height={80}
+                className="w-20 h-20"
+              />
+            </div>
             <h1 className="text-3xl font-bold mt-4">Join BunchUp</h1>
             <p className="text-muted-foreground mt-2">Create your account to get started</p>
           </div>
