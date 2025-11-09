@@ -166,6 +166,101 @@ export default function DashboardPage() {
           </div>
         </div>
 
+          {/* Account Overview Card (from profile) */}
+          <div className="mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-muted/50 text-center">
+                    <div className="text-3xl font-bold text-primary mb-1">Active</div>
+                    <div className="text-sm text-muted-foreground">Account Status</div>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50 text-center">
+                    <div className="text-3xl font-bold text-primary mb-1 capitalize">{user.role}</div>
+                    <div className="text-sm text-muted-foreground">Member Role</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Role Description Card (from profile) */}
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Role Permissions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {user.role === "admin" && (
+                    <>
+                      <div className="flex items-start gap-3">
+                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
+                        <div>
+                          <p className="font-medium">Full Administrative Access</p>
+                          <p className="text-sm text-muted-foreground">Manage users, unions, and all platform content</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
+                        <div>
+                          <p className="font-medium">Moderate Content</p>
+                          <p className="text-sm text-muted-foreground">Delete any posts, comments, or inappropriate content</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {user.role === "organizer" && (
+                    <>
+                      <div className="flex items-start gap-3">
+                        <div className="h-2 w-2 rounded-full bg-blue-500 mt-2" />
+                        <div>
+                          <p className="font-medium">Union Management</p>
+                          <p className="text-sm text-muted-foreground">Create and manage union posts and events</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="h-2 w-2 rounded-full bg-blue-500 mt-2" />
+                        <div>
+                          <p className="font-medium">Create Polls</p>
+                          <p className="text-sm text-muted-foreground">Conduct votes and gather member feedback</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {user.role === "member" && (
+                    <>
+                      <div className="flex items-start gap-3">
+                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
+                        <div>
+                          <p className="font-medium">Create Posts</p>
+                          <p className="text-sm text-muted-foreground">Share updates and participate in discussions</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
+                        <div>
+                          <p className="font-medium">Comment & Vote</p>
+                          <p className="text-sm text-muted-foreground">Engage with posts and participate in polls</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
+                        <div>
+                          <p className="font-medium">Anonymous Feedback</p>
+                          <p className="text-sm text-muted-foreground">Submit confidential feedback and concerns</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
         {/* Anonymous Feedback */}
         <div className="mt-8">
           <FeedbackForm />

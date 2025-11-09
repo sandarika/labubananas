@@ -15,9 +15,8 @@ export function Navbar() {
     { href: "/", label: "Home" },
     { href: "/forum", label: "Forum" },
     { href: "/unions", label: "Unions" },
-    { href: "/dashboard", label: "Dashboard" },
     { href: "/calendar", label: "Calendar" },
-    { href: "/profile", label: "Profile" },
+    { href: "/dashboard", label: "Dashboard" },
   ]
 
   // Only show the Sign In / Sign Up buttons when the user is NOT signed in.
