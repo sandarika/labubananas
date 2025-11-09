@@ -1,11 +1,11 @@
-# 🍌 Bunch Up
+# 🍌 BunchUp
 ### by Team Labubananas | CornHacks 2025
 
 ---
 
 ## 🌟 Overview
 
-**Bunch Up** is a full-stack social platform designed to empower workers and unions by improving transparency, collaboration, and organization.  
+**BunchUp** is a full-stack social platform designed to empower workers and unions by improving transparency, collaboration, and organization.  
 It bridges the gap between employees and union representatives, making it easier to **form**, **join**, and **engage** with unions.
 
 Our mission is simple: make labor organization as easy and accessible as creating a group chat.
@@ -419,7 +419,7 @@ See `SEED_DATA_REFERENCE.md` for comprehensive test data including:
 
 ## 🌍 Real-World Scalability
 
-Bunch Up is built with scalability and impact in mind.  
+BunchUp is built with scalability and impact in mind.  
 While initially designed for demonstration at CornHacks 2025, the platform's architecture can easily expand to support **real-world labor unions** across industries.
 
 ### Potential Growth Paths:
@@ -433,7 +433,7 @@ While initially designed for demonstration at CornHacks 2025, the platform's arc
 - **Video conferencing integration** for remote meetings
 - **Analytics dashboard** for union organizers
 
-By scaling responsibly, Bunch Up has the potential to become a **cornerstone platform for digital labor organization worldwide.**
+By scaling responsibly, BunchUp has the potential to become a **cornerstone platform for digital labor organization worldwide.**
 
 ---
 
