@@ -20,7 +20,10 @@ router = APIRouter()
 def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     # Validate password length (bcrypt has 72 byte limit)
     if len(user_in.password.encode('utf-8')) > 72:
-        raise HTTPException(status_code=400, detail="Password is too long (max 72 bytes)")
+        raise HTTPException(
+            status_code=400, 
+            detail="Password is too long. Please use a password with 72 or fewer characters."
+        )
     
     existing = db.query(models.User).filter(models.User.username == user_in.username).first()
     if existing:

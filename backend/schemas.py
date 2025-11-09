@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, ForwardRef
 import datetime
 
 
@@ -19,6 +19,38 @@ class Feedback(BaseModel):
         orm_mode = True
 
 
+# Comment User Schema
+class CommentUser(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        orm_mode = True
+
+
+# Comment Schema
+class CommentCreate(BaseModel):
+    content: str
+
+
+class CommentUpdate(BaseModel):
+    content: str
+
+
+class Comment(BaseModel):
+    id: int
+    content: str
+    post_id: int
+    user_id: int
+    user: CommentUser
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+    class Config:
+        orm_mode = True
+
+
+# Post Schemas
 class PostCreate(BaseModel):
     title: str
     content: str
@@ -31,6 +63,7 @@ class Post(BaseModel):
     union_id: Optional[int]
     created_at: datetime.datetime
     feedbacks: List[Feedback] = []
+    comments: List[Comment] = []
 
     class Config:
         orm_mode = True
@@ -78,19 +111,32 @@ class Token(BaseModel):
 class EventCreate(BaseModel):
     title: str
     description: Optional[str] = None
+    location: Optional[str] = None
     start_time: datetime.datetime
     end_time: Optional[datetime.datetime] = None
     union_id: Optional[int] = None
+
+
+class EventCreator(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        orm_mode = True
 
 
 class Event(BaseModel):
     id: int
     title: str
     description: Optional[str]
+    location: Optional[str]
     start_time: datetime.datetime
     end_time: Optional[datetime.datetime]
     union_id: Optional[int]
+    creator_id: int
+    creator: EventCreator
     created_at: datetime.datetime
+    attendee_count: int = 0
 
     class Config:
         orm_mode = True
@@ -140,3 +186,4 @@ class PollResults(BaseModel):
     poll_id: int
     question: str
     results: List[PollResultOption]
+

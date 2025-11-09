@@ -35,6 +35,7 @@ class Post(Base):
 
     union = relationship("Union", back_populates="posts")
     feedbacks = relationship("Feedback", back_populates="post", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
 
 
 class Feedback(Base):
@@ -58,6 +59,8 @@ class User(Base):
     role = Column(String, default="member", index=True)  # member | organizer | admin
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+    comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+
 
 class Event(Base):
     __tablename__ = "events"
@@ -65,10 +68,30 @@ class Event(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
+    location = Column(String, nullable=True)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=True)
     union_id = Column(Integer, ForeignKey("unions.id"), nullable=True)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    creator = relationship("User", foreign_keys=[creator_id])
+    attendees = relationship("EventAttendee", back_populates="event", cascade="all, delete-orphan")
+
+
+class EventAttendee(Base):
+    __tablename__ = "event_attendees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    event = relationship("Event", back_populates="attendees")
+    user = relationship("User")
+
+    __table_args__ = (UniqueConstraint("event_id", "user_id", name="unique_event_attendee"),)
+
 
 
 class Poll(Base):
@@ -104,3 +127,17 @@ class Vote(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     option = relationship("PollOption", back_populates="votes")
+
+
+class Comment(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(Text, nullable=False)
+    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    post = relationship("Post", back_populates="comments")
+    user = relationship("User", back_populates="comments")

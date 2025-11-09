@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CalendarIcon, Plus, Clock, MapPin, Users, ChevronLeft, ChevronRight, List } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { eventsApi, type Event as ApiEvent } from "@/lib/api"
 import { useUser } from "@/lib/user-context"
 
@@ -107,9 +111,31 @@ export default function CalendarPage() {
   })
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "list">("month")
   const [filterMode, setFilterMode] = useState<"all" | "my">("all")
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1)) // January 2025
+  const [currentDate, setCurrentDate] = useState(new Date()) // Current date
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isCreateEventOpen, setIsCreateEventOpen] = useState(false)
+  const [isManageCalendarOpen, setIsManageCalendarOpen] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  
+  // Create event form state
+  const [newEventTitle, setNewEventTitle] = useState("")
+  const [newEventDescription, setNewEventDescription] = useState("")
+  const [newEventLocation, setNewEventLocation] = useState("")
+  const [newEventDate, setNewEventDate] = useState("")
+  const [newEventStartTime, setNewEventStartTime] = useState("")
+  const [newEventEndTime, setNewEventEndTime] = useState("")
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false)
+  
+  // Edit event state
+  const [editEventTitle, setEditEventTitle] = useState("")
+  const [editEventDescription, setEditEventDescription] = useState("")
+  const [editEventLocation, setEditEventLocation] = useState("")
+  const [editEventDate, setEditEventDate] = useState("")
+  const [editEventStartTime, setEditEventStartTime] = useState("")
+  const [editEventEndTime, setEditEventEndTime] = useState("")
+  const [isEditingEvent, setIsEditingEvent] = useState(false)
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false)
   
   // API state
   const [apiEvents, setApiEvents] = useState<ApiEvent[]>([])
@@ -123,6 +149,22 @@ export default function CalendarPage() {
         setLoading(true)
         const eventsData = await eventsApi.getEvents()
         setApiEvents(eventsData)
+        
+        // Load RSVP status for each event if user is signed in
+        if (isSignedIn && user) {
+          const rsvpStatuses: Record<number, boolean> = {}
+          for (const event of eventsData) {
+            try {
+              const attendees = await eventsApi.getAttendees(event.id)
+              const isAttending = attendees.attendees.some(a => a.user_id === user.id)
+              rsvpStatuses[event.id] = isAttending
+            } catch (err) {
+              console.error(`Failed to load attendees for event ${event.id}:`, err)
+            }
+          }
+          setRsvpStatus(rsvpStatuses)
+        }
+        
         setError(null)
       } catch (err) {
         console.error("Failed to load events:", err)
@@ -132,7 +174,7 @@ export default function CalendarPage() {
       }
     }
     fetchEvents()
-  }, [])
+  }, [isSignedIn, user])
 
   // Set admin status based on user role
   useEffect(() => {
@@ -157,11 +199,11 @@ export default function CalendarPage() {
       title: apiEvent.title,
       date: startTime.toISOString().split('T')[0],
       time: timeString,
-      location: "Union Hall", // Default location, API doesn't have this yet
+      location: apiEvent.location || "TBD",
       category: "Meeting", // Default category, API doesn't have this yet
-      attendees: 0, // API doesn't track attendees yet
-      canEdit: isAdmin,
-      organizer: "Admin"
+      attendees: apiEvent.attendee_count,
+      canEdit: user ? (apiEvent.creator_id === user.id || user.role === "admin" || user.role === "organizer") : false,
+      organizer: apiEvent.creator.username
     }
   }
 
@@ -169,11 +211,165 @@ export default function CalendarPage() {
     ? apiEvents.map(transformApiEvents)
     : mockEvents
 
-  const toggleRSVP = (eventId: number) => {
-    setRsvpStatus((prev) => ({
-      ...prev,
-      [eventId]: !prev[eventId],
-    }))
+  const toggleRSVP = async (eventId: number) => {
+    if (!isSignedIn) {
+      alert("Please sign in to RSVP to events")
+      return
+    }
+
+    try {
+      const isCurrentlyRSVPd = rsvpStatus[eventId]
+      
+      if (isCurrentlyRSVPd) {
+        // Cancel RSVP
+        const result = await eventsApi.cancelRsvp(eventId)
+        setRsvpStatus((prev) => ({
+          ...prev,
+          [eventId]: false,
+        }))
+        // Update attendee count in API events
+        setApiEvents(prev => prev.map(e => 
+          e.id === eventId ? { ...e, attendee_count: result.attendee_count } : e
+        ))
+      } else {
+        // RSVP to event
+        const result = await eventsApi.rsvpToEvent(eventId)
+        setRsvpStatus((prev) => ({
+          ...prev,
+          [eventId]: true,
+        }))
+        // Update attendee count in API events
+        setApiEvents(prev => prev.map(e => 
+          e.id === eventId ? { ...e, attendee_count: result.attendee_count } : e
+        ))
+      }
+    } catch (err: any) {
+      console.error("Failed to toggle RSVP:", err)
+      alert(err.message || "Failed to update RSVP. Please try again.")
+    }
+  }
+
+  const handleCreateEvent = async () => {
+    if (!newEventTitle || !newEventDate || !newEventStartTime) {
+      alert("Please fill in all required fields (title, date, start time)")
+      return
+    }
+
+    try {
+      setIsCreatingEvent(true)
+      
+      // Combine date and time into ISO format
+      const startDateTime = new Date(`${newEventDate}T${newEventStartTime}`)
+      const endDateTime = newEventEndTime ? new Date(`${newEventDate}T${newEventEndTime}`) : null
+
+      const newEvent = await eventsApi.createEvent({
+        title: newEventTitle,
+        description: newEventDescription || undefined,
+        location: newEventLocation || undefined,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime?.toISOString(),
+      })
+
+      // Add to local state
+      setApiEvents(prev => [newEvent, ...prev])
+      
+      // Reset form
+      setNewEventTitle("")
+      setNewEventDescription("")
+      setNewEventLocation("")
+      setNewEventDate("")
+      setNewEventStartTime("")
+      setNewEventEndTime("")
+      setIsCreateEventOpen(false)
+    } catch (err) {
+      console.error("Failed to create event:", err)
+      alert("Failed to create event. Please try again.")
+    } finally {
+      setIsCreatingEvent(false)
+    }
+  }
+
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event)
+    setEditEventTitle(event.title)
+    setEditEventLocation(event.location)
+    // Parse the API event to get date and time
+    const apiEvent = apiEvents.find(e => e.id === event.id)
+    if (apiEvent) {
+      const startTime = new Date(apiEvent.start_time)
+      setEditEventDate(startTime.toISOString().split('T')[0])
+      setEditEventStartTime(startTime.toTimeString().slice(0, 5))
+      if (apiEvent.end_time) {
+        const endTime = new Date(apiEvent.end_time)
+        setEditEventEndTime(endTime.toTimeString().slice(0, 5))
+      } else {
+        setEditEventEndTime("")
+      }
+      setEditEventDescription(apiEvent.description || "")
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingEvent || !editEventTitle || !editEventDate || !editEventStartTime) {
+      alert("Please fill in all required fields (title, date, start time)")
+      return
+    }
+
+    try {
+      setIsEditingEvent(true)
+      
+      const startDateTime = new Date(`${editEventDate}T${editEventStartTime}`)
+      const endDateTime = editEventEndTime ? new Date(`${editEventDate}T${editEventEndTime}`) : null
+
+      const updatedEvent = await eventsApi.updateEvent(editingEvent.id, {
+        title: editEventTitle,
+        description: editEventDescription || undefined,
+        location: editEventLocation || undefined,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime?.toISOString(),
+      })
+
+      // Update local state
+      setApiEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e))
+      
+      // Reset form
+      setEditingEvent(null)
+      setEditEventTitle("")
+      setEditEventDescription("")
+      setEditEventLocation("")
+      setEditEventDate("")
+      setEditEventStartTime("")
+      setEditEventEndTime("")
+    } catch (err) {
+      console.error("Failed to update event:", err)
+      alert("Failed to update event. Please try again.")
+    } finally {
+      setIsEditingEvent(false)
+    }
+  }
+
+  const handleDeleteEvent = async (eventId: number) => {
+    if (!confirm("Are you sure you want to delete this event?")) {
+      return
+    }
+
+    try {
+      setIsDeletingEvent(true)
+      await eventsApi.deleteEvent(eventId)
+      
+      // Remove from local state
+      setApiEvents(prev => prev.filter(e => e.id !== eventId))
+      
+      // Close edit dialog if this event was being edited
+      if (editingEvent?.id === eventId) {
+        setEditingEvent(null)
+      }
+    } catch (err) {
+      console.error("Failed to delete event:", err)
+      alert("Failed to delete event. Please try again.")
+    } finally {
+      setIsDeletingEvent(false)
+    }
   }
 
   const filteredEvents = filterMode === "my" ? events.filter((event: Event) => rsvpStatus[event.id]) : events
@@ -192,7 +388,9 @@ export default function CalendarPage() {
   }
 
   const goToToday = () => {
-    setCurrentDate(new Date())
+    const today = new Date()
+    setCurrentDate(today)
+    setSelectedDate(null)
   }
 
   const generateCalendarDays = () => {
@@ -231,6 +429,23 @@ export default function CalendarPage() {
       <Navbar />
 
       <div className="container mx-auto px-4 py-8">
+        {/* Show loading state */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F2C94C] mx-auto mb-4"></div>
+              <p className="text-[#737373]">Loading events...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Show error if any */}
+        {error && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+            <p className="text-yellow-800 text-sm">{error}</p>
+          </div>
+        )}
+
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#1e1e1e]">Union Calendar</h1>
@@ -289,7 +504,10 @@ export default function CalendarPage() {
             </div>
 
             {isAdmin && (
-              <Button className="rounded-xl bg-[#F2C94C] text-[#1e1e1e] hover:bg-[#E7B056] shadow-sm">
+              <Button 
+                className="rounded-xl bg-[#F2C94C] text-[#1e1e1e] hover:bg-[#E7B056] shadow-sm"
+                onClick={() => setIsCreateEventOpen(true)}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Create Event
               </Button>
@@ -351,7 +569,11 @@ export default function CalendarPage() {
                     {/* Calendar days */}
                     {calendarDays.map((date, index) => {
                       const dayEvents = date ? getEventsForDate(date) : []
-                      const isToday = date && date.toDateString() === new Date().toDateString()
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+                      const dateToCompare = date ? new Date(date) : null
+                      if (dateToCompare) dateToCompare.setHours(0, 0, 0, 0)
+                      const isToday = dateToCompare && today.getTime() === dateToCompare.getTime()
 
                       return (
                         <div
@@ -385,7 +607,7 @@ export default function CalendarPage() {
                                 {dayEvents.slice(0, 3).map((event: Event) => (
                                   <div
                                     key={event.id}
-                                    className="h-1 rounded-sm mb-[1px]"
+                                    className="h-1 w-8 rounded-sm mb-[1px]"
                                     style={{ backgroundColor: categoryColors[event.category] }}
                                     title={event.title}
                                   />
@@ -497,7 +719,11 @@ export default function CalendarPage() {
                             </Button>
                           )}
                           {event.canEdit && isAdmin && (
-                            <Button variant="ghost" className="rounded-xl hover:bg-gray-50">
+                            <Button 
+                              variant="ghost" 
+                              className="rounded-xl hover:bg-gray-50"
+                              onClick={() => handleEditEvent(event)}
+                            >
                               Edit
                             </Button>
                           )}
@@ -551,13 +777,17 @@ export default function CalendarPage() {
                   <CardTitle className="text-lg text-[#1e1e1e]">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Button className="w-full justify-start rounded-xl bg-[#F2C94C] text-[#1e1e1e] hover:bg-[#E7B056]">
+                  <Button 
+                    className="w-full justify-start rounded-xl bg-[#F2C94C] text-[#1e1e1e] hover:bg-[#E7B056]"
+                    onClick={() => setIsCreateEventOpen(true)}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Create Event
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full justify-start rounded-xl border-[#e5e5e5] hover:bg-gray-50 bg-transparent"
+                    onClick={() => setIsManageCalendarOpen(true)}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     Manage Calendar
@@ -649,6 +879,298 @@ export default function CalendarPage() {
                   </Button>
                 </div>
               ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Event Dialog */}
+      <Dialog open={isCreateEventOpen} onOpenChange={setIsCreateEventOpen}>
+        <DialogContent className="rounded-xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-[#1e1e1e]">Create New Event</DialogTitle>
+            <DialogDescription className="text-[#737373]">
+              Schedule a new event for union members
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="event-title">Event Title *</Label>
+              <Input
+                id="event-title"
+                placeholder="e.g., Monthly Union Meeting"
+                value={newEventTitle}
+                onChange={(e) => setNewEventTitle(e.target.value)}
+                className="rounded-lg"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="event-description">Description</Label>
+              <Textarea
+                id="event-description"
+                placeholder="Event details..."
+                value={newEventDescription}
+                onChange={(e) => setNewEventDescription(e.target.value)}
+                className="rounded-lg"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="event-location">Location</Label>
+              <Input
+                id="event-location"
+                placeholder="e.g., Union Hall, Main Street"
+                value={newEventLocation}
+                onChange={(e) => setNewEventLocation(e.target.value)}
+                className="rounded-lg"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="event-date">Date *</Label>
+              <Input
+                id="event-date"
+                type="date"
+                value={newEventDate}
+                onChange={(e) => setNewEventDate(e.target.value)}
+                className="rounded-lg"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="event-start-time">Start Time *</Label>
+                <Input
+                  id="event-start-time"
+                  type="time"
+                  value={newEventStartTime}
+                  onChange={(e) => setNewEventStartTime(e.target.value)}
+                  className="rounded-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="event-end-time">End Time</Label>
+                <Input
+                  id="event-end-time"
+                  type="time"
+                  value={newEventEndTime}
+                  onChange={(e) => setNewEventEndTime(e.target.value)}
+                  className="rounded-lg"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                className="flex-1 rounded-xl bg-[#F2C94C] text-[#1e1e1e] hover:bg-[#E7B056]"
+                onClick={handleCreateEvent}
+                disabled={isCreatingEvent}
+              >
+                {isCreatingEvent ? "Creating..." : "Create Event"}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl border-[#e5e5e5] hover:bg-gray-50 bg-transparent"
+                onClick={() => setIsCreateEventOpen(false)}
+                disabled={isCreatingEvent}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Calendar Dialog */}
+      <Dialog open={isManageCalendarOpen} onOpenChange={setIsManageCalendarOpen}>
+        <DialogContent className="rounded-xl max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[#1e1e1e]">Manage Calendar Events</DialogTitle>
+            <DialogDescription className="text-[#737373]">
+              View, edit, or delete upcoming events
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            {events.length === 0 ? (
+              <div className="text-center py-8">
+                <CalendarIcon className="mx-auto h-12 w-12 text-[#737373] mb-4" />
+                <p className="text-[#737373]">No events to manage</p>
+              </div>
+            ) : (
+              events
+                .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                .map((event: Event) => (
+                  <div key={event.id} className="rounded-lg border border-[#e5e5e5] p-4 hover:border-[#F2C94C] transition-colors">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge
+                            variant="secondary"
+                            className="rounded-lg"
+                            style={{
+                              backgroundColor: categoryColors[event.category],
+                              color: "#1e1e1e",
+                            }}
+                          >
+                            {event.category}
+                          </Badge>
+                        </div>
+                        <h4 className="font-semibold text-[#1e1e1e] mb-1">{event.title}</h4>
+                        <div className="space-y-1 text-sm text-[#737373]">
+                          <div className="flex items-center">
+                            <CalendarIcon className="mr-2 h-3 w-3" />
+                            {new Date(event.date).toLocaleDateString("en-US", {
+                              weekday: "long",
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="mr-2 h-3 w-3" />
+                            {event.time}
+                          </div>
+                          <div className="flex items-center">
+                            <Users className="mr-2 h-3 w-3" />
+                            {event.attendees} attending
+                          </div>
+                          <div className="text-[#737373]">
+                            Organizer: {event.organizer}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {event.canEdit && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-lg border-[#e5e5e5] hover:bg-gray-50"
+                          onClick={() => handleEditEvent(event)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="rounded-lg"
+                          onClick={() => handleDeleteEvent(event.id)}
+                          disabled={isDeletingEvent}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    )}
+                    {!event.canEdit && (
+                      <p className="text-xs text-[#737373] italic mt-2">
+                        Only the event creator can edit or delete this event
+                      </p>
+                    )}
+                  </div>
+                ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={editingEvent !== null} onOpenChange={() => setEditingEvent(null)}>
+        <DialogContent className="rounded-xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-[#1e1e1e]">Edit Event</DialogTitle>
+            <DialogDescription className="text-[#737373]">
+              Update event information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-event-title">Event Title *</Label>
+              <Input
+                id="edit-event-title"
+                placeholder="e.g., Monthly Union Meeting"
+                value={editEventTitle}
+                onChange={(e) => setEditEventTitle(e.target.value)}
+                className="rounded-lg"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-event-description">Description</Label>
+              <Textarea
+                id="edit-event-description"
+                placeholder="Event details..."
+                value={editEventDescription}
+                onChange={(e) => setEditEventDescription(e.target.value)}
+                className="rounded-lg"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-event-location">Location</Label>
+              <Input
+                id="edit-event-location"
+                placeholder="e.g., Union Hall, Main Street"
+                value={editEventLocation}
+                onChange={(e) => setEditEventLocation(e.target.value)}
+                className="rounded-lg"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-event-date">Date *</Label>
+              <Input
+                id="edit-event-date"
+                type="date"
+                value={editEventDate}
+                onChange={(e) => setEditEventDate(e.target.value)}
+                className="rounded-lg"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-event-start-time">Start Time *</Label>
+                <Input
+                  id="edit-event-start-time"
+                  type="time"
+                  value={editEventStartTime}
+                  onChange={(e) => setEditEventStartTime(e.target.value)}
+                  className="rounded-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-event-end-time">End Time</Label>
+                <Input
+                  id="edit-event-end-time"
+                  type="time"
+                  value={editEventEndTime}
+                  onChange={(e) => setEditEventEndTime(e.target.value)}
+                  className="rounded-lg"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                className="flex-1 rounded-xl bg-[#F2C94C] text-[#1e1e1e] hover:bg-[#E7B056]"
+                onClick={handleSaveEdit}
+                disabled={isEditingEvent}
+              >
+                {isEditingEvent ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl border-[#e5e5e5] hover:bg-gray-50 bg-transparent"
+                onClick={() => setEditingEvent(null)}
+                disabled={isEditingEvent}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

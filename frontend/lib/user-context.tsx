@@ -7,6 +7,7 @@ type User = {
   id: number
   username: string
   role: string
+  created_at: string
   email?: string
   phone?: string
   union?: string

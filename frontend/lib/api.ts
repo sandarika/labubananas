@@ -34,6 +34,7 @@ export interface Post {
   union_id: number | null;
   created_at: string;
   feedbacks?: Feedback[];
+  comments?: Comment[];
 }
 
 export interface PostCreate {
@@ -54,6 +55,29 @@ export interface FeedbackCreate {
   anonymous?: boolean;
 }
 
+export interface CommentUser {
+  id: number;
+  username: string;
+}
+
+export interface Comment {
+  id: number;
+  content: string;
+  post_id: number;
+  user_id: number;
+  user: CommentUser;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommentCreate {
+  content: string;
+}
+
+export interface CommentUpdate {
+  content: string;
+}
+
 export interface Union {
   id: number;
   name: string;
@@ -71,15 +95,23 @@ export interface Event {
   id: number;
   title: string;
   description: string | null;
+  location: string | null;
   start_time: string;
   end_time: string | null;
   union_id: number | null;
+  creator_id: number;
+  creator: {
+    id: number;
+    username: string;
+  };
   created_at: string;
+  attendee_count: number;
 }
 
 export interface EventCreate {
   title: string;
   description?: string;
+  location?: string;
   start_time: string;
   end_time?: string;
   union_id?: number;
@@ -257,11 +289,48 @@ export const eventsApi = {
     return fetchWithAuth(apiUrl(`/api/events/?skip=${skip}&limit=${limit}`));
   },
 
+  async getEvent(eventId: number): Promise<Event> {
+    return fetchWithAuth(apiUrl(`/api/events/${eventId}`));
+  },
+
   async createEvent(event: EventCreate): Promise<Event> {
     return fetchWithAuth(apiUrl("/api/events/"), {
       method: "POST",
       body: JSON.stringify(event),
     });
+  },
+
+  async updateEvent(eventId: number, event: EventCreate): Promise<Event> {
+    return fetchWithAuth(apiUrl(`/api/events/${eventId}`), {
+      method: "PUT",
+      body: JSON.stringify(event),
+    });
+  },
+
+  async deleteEvent(eventId: number): Promise<{ message: string }> {
+    return fetchWithAuth(apiUrl(`/api/events/${eventId}`), {
+      method: "DELETE",
+    });
+  },
+
+  async rsvpToEvent(eventId: number): Promise<{ message: string; attendee_count: number }> {
+    return fetchWithAuth(apiUrl(`/api/events/${eventId}/rsvp`), {
+      method: "POST",
+    });
+  },
+
+  async cancelRsvp(eventId: number): Promise<{ message: string; attendee_count: number }> {
+    return fetchWithAuth(apiUrl(`/api/events/${eventId}/rsvp`), {
+      method: "DELETE",
+    });
+  },
+
+  async getAttendees(eventId: number): Promise<{
+    event_id: number;
+    attendee_count: number;
+    attendees: Array<{ user_id: number; username: string }>;
+  }> {
+    return fetchWithAuth(apiUrl(`/api/events/${eventId}/attendees`));
   },
 };
 
@@ -296,6 +365,33 @@ export const chatbotApi = {
     return fetchWithAuth(apiUrl("/api/chatbot/ask"), {
       method: "POST",
       body: JSON.stringify({ question }),
+    });
+  },
+};
+
+// Comments API
+export const commentsApi = {
+  async getComments(postId: number, skip: number = 0, limit: number = 100): Promise<Comment[]> {
+    return fetchWithAuth(apiUrl(`/api/posts/${postId}/comments?skip=${skip}&limit=${limit}`));
+  },
+
+  async createComment(postId: number, comment: CommentCreate): Promise<Comment> {
+    return fetchWithAuth(apiUrl(`/api/posts/${postId}/comments`), {
+      method: "POST",
+      body: JSON.stringify(comment),
+    });
+  },
+
+  async updateComment(commentId: number, comment: CommentUpdate): Promise<Comment> {
+    return fetchWithAuth(apiUrl(`/api/posts/comments/${commentId}`), {
+      method: "PUT",
+      body: JSON.stringify(comment),
+    });
+  },
+
+  async deleteComment(commentId: number): Promise<void> {
+    return fetchWithAuth(apiUrl(`/api/posts/comments/${commentId}`), {
+      method: "DELETE",
     });
   },
 };

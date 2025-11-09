@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ChevronUp, ChevronDown, MessageCircle, Share2, Bookmark, MoreHorizontal, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CommentSection } from "@/components/comment-section"
 
 interface PostCardProps {
   id: number
@@ -23,6 +24,7 @@ interface PostCardProps {
 }
 
 export function PostCard({
+  id,
   title,
   author,
   role,
@@ -30,7 +32,7 @@ export function PostCard({
   category,
   content,
   upvotes: initialUpvotes,
-  comments,
+  comments: initialComments,
   time,
   isPinned = false,
 }: PostCardProps) {
@@ -38,6 +40,8 @@ export function PostCard({
   const [voteState, setVoteState] = useState<"up" | "down" | null>(null)
   const [isHovered, setIsHovered] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const [commentCount, setCommentCount] = useState(initialComments)
 
   const handleVote = (type: "up" | "down") => {
     if (voteState === type) {
@@ -153,11 +157,15 @@ export function PostCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground hover:text-foreground hover:bg-banana-light/50 gap-2 transition-all"
-                aria-label={`${comments} comments`}
+                className={cn(
+                  "text-muted-foreground hover:text-foreground hover:bg-banana-light/50 gap-2 transition-all",
+                  showComments && "bg-banana-light/50 text-foreground"
+                )}
+                aria-label={`${commentCount} comments`}
+                onClick={() => setShowComments(!showComments)}
               >
                 <MessageCircle className="h-4 w-4" />
-                <span className="text-xs font-medium">{comments}</span>
+                <span className="text-xs font-medium">{commentCount}</span>
               </Button>
               <Button
                 variant="ghost"
@@ -180,6 +188,17 @@ export function PostCard({
             </div>
           </div>
         </div>
+
+        {/* Comment Section */}
+        {showComments && (
+          <div className="border-t border-border">
+            <CommentSection 
+              postId={id} 
+              initialCommentCount={commentCount}
+              onCommentCountChange={setCommentCount}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   )
