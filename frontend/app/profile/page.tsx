@@ -66,11 +66,11 @@ export default function ProfilePage() {
   const getRoleBadgeColor = (role: string) => {
     switch (role.toLowerCase()) {
       case "admin":
-        return "bg-red-500 hover:bg-red-600"
+        return "bg-red-200 text-red-800 hover:bg-red-300"
       case "organizer":
-        return "bg-blue-500 hover:bg-blue-600"
+        return "bg-blue-200 text-blue-800 hover:bg-blue-300"
       default:
-        return "bg-green-500 hover:bg-green-600"
+        return "bg-green-200 text-green-800 hover:bg-green-300"
     }
   }
 

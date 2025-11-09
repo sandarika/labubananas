@@ -20,7 +20,9 @@ export function Navbar() {
     { href: "/profile", label: "Profile" },
   ]
 
-  const showAuthButtons = pathname !== "/sign-in" && pathname !== "/sign-up"
+  // Only show the Sign In / Sign Up buttons when the user is NOT signed in.
+  // Keep them visible even on the sign-in / sign-up pages per preference.
+  const showAuthButtons = !isSignedIn
 
   const handleSignOut = () => {
     signOut()
@@ -29,13 +31,13 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+  <div className="container mx-auto grid grid-cols-[auto_1fr_auto] items-center h-16 px-4">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold banana-bounce">
           <span className="text-4xl">🍌</span>
           <span className="text-foreground">BunchUp</span>
         </Link>
 
-        <div className="flex items-center gap-6">
+  <div className="flex items-center gap-6 justify-center">
           {links.map((link) => {
             const isActive = pathname === link.href
             return (
